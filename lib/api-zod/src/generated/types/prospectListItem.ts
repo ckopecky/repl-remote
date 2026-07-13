@@ -24,4 +24,5 @@ export interface ProspectListItem {
   outreachPriority: OutreachPriority;
   /** @nullable */
   outreachStatus: string | null;
+  triggeredEventTypes: string[];
 }

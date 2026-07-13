@@ -16,6 +16,10 @@ priority?: OutreachPriority;
 archetype?: Archetype;
 department?: string;
 status?: OutreachStatus;
+/**
+ * Filter to prospects who have triggered at least one event of this type.
+ */
+eventType?: string;
 search?: string;
 sortBy?: ListProspectsSortBy;
 sortDir?: ListProspectsSortDir;

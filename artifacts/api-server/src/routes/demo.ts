@@ -88,6 +88,7 @@ router.post("/demo/generate-batch", async (req, res): Promise<void> => {
     churnRiskScore: r.researchAssessment.churnRiskScore,
     outreachPriority: r.researchAssessment.outreachPriority,
     outreachStatus: null,
+    triggeredEventTypes: Array.from(new Set(r.events.map((e) => e.eventName))),
   }));
 
   const data = GenerateBatchResponse.parse({ generated: results.length, prospects });

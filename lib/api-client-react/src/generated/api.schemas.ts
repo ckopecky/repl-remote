@@ -62,15 +62,17 @@ export interface Company {
   id: number;
   name: string;
   domain: string;
-  industry: string;
+  industry: string[];
   employeeCount: number;
-  fundingStage: string;
+  employeeRange: string[];
+  fundingStage: string[];
   /** @nullable */
   latestFundingDate: string | null;
   /** @nullable */
   fundingAmount: number | null;
-  headquarters: string;
-  productCategory: string;
+  /** @nullable */
+  headquarters: string | null;
+  productCategory: string[];
   technologyContext: string;
   growthSignal: string;
   icpFitScore: number;
@@ -219,6 +221,7 @@ export interface ProspectListItem {
   outreachPriority: OutreachPriority;
   /** @nullable */
   outreachStatus: string | null;
+  triggeredEventTypes: string[];
 }
 
 export type AttioSyncStatus = typeof AttioSyncStatus[keyof typeof AttioSyncStatus];
@@ -388,6 +391,10 @@ priority?: OutreachPriority;
 archetype?: Archetype;
 department?: string;
 status?: OutreachStatus;
+/**
+ * Filter to prospects who have triggered at least one event of this type.
+ */
+eventType?: string;
 search?: string;
 sortBy?: ListProspectsSortBy;
 sortDir?: ListProspectsSortDir;

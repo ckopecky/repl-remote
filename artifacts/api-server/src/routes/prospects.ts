@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import {
   db,
   peopleTable,
@@ -33,13 +33,18 @@ router.get("/prospects", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { priority, archetype, department, status, search, sortBy, sortDir } = parsed.data;
+  const { priority, archetype, department, status, eventType, search, sortBy, sortDir } = parsed.data;
 
   const conditions: SQL[] = [];
   if (priority) conditions.push(eq(researchAssessmentsTable.outreachPriority, priority));
   if (archetype) conditions.push(eq(peopleTable.archetype, archetype));
   if (department) conditions.push(eq(peopleTable.department, department));
   if (status) conditions.push(eq(outreachPackagesTable.status, status));
+  if (eventType) {
+    conditions.push(
+      sql`exists (select 1 from ${productEventsTable} pe where pe.person_id = ${peopleTable.id} and pe.event_name = ${eventType})`,
+    );
+  }
   if (search) {
     const like = `%${search}%`;
     conditions.push(
@@ -71,6 +76,11 @@ router.get("/prospects", async (req, res): Promise<void> => {
       churnRiskScore: researchAssessmentsTable.churnRiskScore,
       outreachPriority: researchAssessmentsTable.outreachPriority,
       outreachStatus: outreachPackagesTable.status,
+      triggeredEventTypes: sql<string[]>`coalesce((
+        select array_agg(distinct pe.event_name)
+        from ${productEventsTable} pe
+        where pe.person_id = ${peopleTable.id}
+      ), '{}')`,
     })
     .from(peopleTable)
     .innerJoin(companiesTable, eq(peopleTable.companyId, companiesTable.id))

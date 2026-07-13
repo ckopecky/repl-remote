@@ -247,16 +247,30 @@ export default function ProspectDetail() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Industry</div>
-                <div className="text-sm font-medium">{company.industry}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {company.industry.map((i) => (
+                    <Badge key={i} variant="secondary" className="font-normal">{i}</Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Product Category</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {company.productCategory.map((c) => (
+                    <Badge key={c} variant="secondary" className="font-normal">{c}</Badge>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Employees</div>
                   <div className="text-sm font-medium">{company.employeeCount.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{company.employeeRange.join(", ")}</div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Funding</div>
-                  <div className="text-sm font-medium">{company.fundingStage}</div>
+                  <div className="text-sm font-medium">{company.fundingStage[company.fundingStage.length - 1]}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">via {company.fundingStage.join(" → ")}</div>
                 </div>
               </div>
               <div>

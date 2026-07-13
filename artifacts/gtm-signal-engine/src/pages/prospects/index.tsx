@@ -8,14 +8,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Target, Search, ArrowUpDown } from "lucide-react";
 
+// Mirrors the fixed product event taxonomy in the API server's constants.ts --
+// every event a person can trigger is one of these, so this doubles as the
+// full set of selectable options for the event-type filter below.
+const EVENT_TYPE_OPTIONS = [
+  "user_signed_up",
+  "application_created",
+  "application_configured",
+  "organization_enabled",
+  "teammate_invited",
+  "sdk_installed",
+  "api_key_created",
+  "integration_error",
+  "documentation_viewed",
+  "sso_documentation_viewed",
+  "mfa_enabled",
+  "pricing_page_viewed",
+  "enterprise_page_viewed",
+  "checkout_started",
+  "subscription_started",
+  "inactive_period",
+  "returned_to_product",
+];
+
+function formatEventType(name: string): string {
+  return name.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
 export default function ProspectsList() {
   const [search, setSearch] = useState("");
   const [priority, setPriority] = useState<string>("all");
+  const [eventType, setEventType] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("outreachPriority");
   
   const { data: prospects, isLoading } = useListProspects({
     search: search || undefined,
     priority: priority !== "all" ? priority as OutreachPriority : undefined,
+    eventType: eventType !== "all" ? eventType : undefined,
     sortBy: sortBy as any,
     sortDir: "desc"
   });
@@ -69,6 +98,17 @@ export default function ProspectsList() {
                 <SelectItem value="Suppress">Suppressed</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={eventType} onValueChange={setEventType}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Event Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any Event Type</SelectItem>
+                {EVENT_TYPE_OPTIONS.map((e) => (
+                  <SelectItem key={e} value={e}>{formatEventType(e)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Sort By" />
@@ -96,6 +136,7 @@ export default function ProspectsList() {
                 <TableHead className="text-right">ICP Fit</TableHead>
                 <TableHead className="text-right">Activation</TableHead>
                 <TableHead>Priority</TableHead>
+                <TableHead>Events Triggered</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -109,12 +150,13 @@ export default function ProspectsList() {
                     <TableCell><div className="h-5 w-8 bg-muted animate-pulse rounded ml-auto" /></TableCell>
                     <TableCell><div className="h-5 w-8 bg-muted animate-pulse rounded ml-auto" /></TableCell>
                     <TableCell><div className="h-6 w-20 bg-muted animate-pulse rounded-full" /></TableCell>
+                    <TableCell><div className="h-5 w-28 bg-muted animate-pulse rounded" /></TableCell>
                     <TableCell><div className="h-5 w-16 bg-muted animate-pulse rounded" /></TableCell>
                   </TableRow>
                 ))
               ) : prospects?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-48 text-center text-muted-foreground">
                     No prospects found matching your criteria.
                   </TableCell>
                 </TableRow>
@@ -145,6 +187,24 @@ export default function ProspectsList() {
                       <Badge variant="outline" className={getPriorityColor(p.outreachPriority)}>
                         {p.outreachPriority}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1 max-w-[220px]">
+                        {p.triggeredEventTypes.length === 0 ? (
+                          <span className="text-xs text-muted-foreground italic">None yet</span>
+                        ) : (
+                          p.triggeredEventTypes.slice(0, 3).map((e) => (
+                            <Badge key={e} variant="secondary" className="text-[10px] font-normal">
+                              {formatEventType(e)}
+                            </Badge>
+                          ))
+                        )}
+                        {p.triggeredEventTypes.length > 3 && (
+                          <Badge variant="secondary" className="text-[10px] font-normal">
+                            +{p.triggeredEventTypes.length - 3}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {p.outreachStatus ? (

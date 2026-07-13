@@ -87,6 +87,36 @@ function pick<T>(arr: readonly T[]): T {
   return faker.helpers.arrayElement(arr as T[]);
 }
 
+/** Picks a random, deduplicated subset of `arr` of size between `min` and `max` (inclusive). */
+function pickMany<T>(arr: readonly T[], min: number, max: number): T[] {
+  const count = faker.number.int({ min, max: Math.min(max, arr.length) });
+  return faker.helpers.arrayElements(arr as T[], count);
+}
+
+const EMPLOYEE_RANGE_BUCKETS: { label: string; min: number; max: number }[] = [
+  { label: "1-10", min: 1, max: 10 },
+  { label: "11-50", min: 11, max: 50 },
+  { label: "51-200", min: 51, max: 200 },
+  { label: "201-500", min: 201, max: 500 },
+  { label: "501-1000", min: 501, max: 1000 },
+  { label: "1001-5000", min: 1001, max: 5000 },
+  { label: "5000+", min: 5001, max: Infinity },
+];
+
+/** Maps a raw employee count to the standard headcount bucket(s) it falls into. */
+function employeeRangeFor(count: number): string[] {
+  const bucket =
+    EMPLOYEE_RANGE_BUCKETS.find((b) => count >= b.min && count <= b.max) ??
+    EMPLOYEE_RANGE_BUCKETS[EMPLOYEE_RANGE_BUCKETS.length - 1]!;
+  return [bucket.label];
+}
+
+/** Returns the funding stages a company has raised through, in order, up to and including `currentStage`. */
+function fundingStageHistory(currentStage: string): string[] {
+  const idx = FUNDING_STAGES.indexOf(currentStage);
+  return idx === -1 ? [currentStage] : FUNDING_STAGES.slice(0, idx + 1);
+}
+
 function hoursAfter(base: Date, hours: number): Date {
   return new Date(base.getTime() + hours * 60 * 60 * 1000);
 }
@@ -114,9 +144,10 @@ export function generateCompany(): InsertCompany {
   return {
     name: faker.company.name(),
     domain: faker.internet.domainName(),
-    industry: pick(INDUSTRIES),
+    industry: pickMany(INDUSTRIES, 1, 2),
     employeeCount,
-    fundingStage,
+    employeeRange: employeeRangeFor(employeeCount),
+    fundingStage: fundingStageHistory(fundingStage),
     latestFundingDate: hasFunding
       ? faker.date.past({ years: 2 }).toISOString().slice(0, 10)
       : null,
@@ -124,7 +155,7 @@ export function generateCompany(): InsertCompany {
       ? faker.number.int({ min: 500_000, max: 250_000_000 })
       : null,
     headquarters: `${faker.location.city()}, ${faker.location.countryCode()}`,
-    productCategory: pick(PRODUCT_CATEGORIES),
+    productCategory: pickMany(PRODUCT_CATEGORIES, 1, 2),
     technologyContext: `${pick(["React", "Vue", "Django", "Rails", "Go", "Java/Spring"])} stack, ${pick([
       "AWS",
       "GCP",

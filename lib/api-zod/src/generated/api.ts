@@ -41,6 +41,7 @@ export const ListProspectsQueryParams = zod.object({
   "archetype": zod.enum(['rapid_team_activator', 'enterprise_evaluator', 'solo_builder', 'stalled_implementer', 'returning_evaluator', 'converted_account']).optional(),
   "department": zod.coerce.string().optional(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']).optional(),
+  "eventType": zod.coerce.string().optional().describe('Filter to prospects who have triggered at least one event of this type.'),
   "search": zod.coerce.string().optional(),
   "sortBy": zod.enum(['icpFitScore', 'activationScore', 'enterpriseIntentScore', 'churnRiskScore', 'outreachPriority', 'createdAt']).optional(),
   "sortDir": zod.enum(['asc', 'desc']).optional()
@@ -60,7 +61,8 @@ export const ListProspectsResponseItem = zod.object({
   "enterpriseIntentScore": zod.number(),
   "churnRiskScore": zod.number(),
   "outreachPriority": zod.enum(['High', 'Medium', 'Low', 'Suppress']),
-  "outreachStatus": zod.string().nullable()
+  "outreachStatus": zod.string().nullable(),
+  "triggeredEventTypes": zod.array(zod.string())
 })
 export const ListProspectsResponse = zod.array(ListProspectsResponseItem)
 
@@ -95,13 +97,14 @@ export const GetProspectDetailResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "domain": zod.string(),
-  "industry": zod.string(),
+  "industry": zod.array(zod.string()),
   "employeeCount": zod.number(),
-  "fundingStage": zod.string(),
+  "employeeRange": zod.array(zod.string()),
+  "fundingStage": zod.array(zod.string()),
   "latestFundingDate": zod.coerce.date().nullable(),
   "fundingAmount": zod.number().nullable(),
-  "headquarters": zod.string(),
-  "productCategory": zod.string(),
+  "headquarters": zod.string().nullable(),
+  "productCategory": zod.array(zod.string()),
   "technologyContext": zod.string(),
   "growthSignal": zod.string(),
   "icpFitScore": zod.number(),
@@ -570,13 +573,14 @@ export const GenerateProspectResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "domain": zod.string(),
-  "industry": zod.string(),
+  "industry": zod.array(zod.string()),
   "employeeCount": zod.number(),
-  "fundingStage": zod.string(),
+  "employeeRange": zod.array(zod.string()),
+  "fundingStage": zod.array(zod.string()),
   "latestFundingDate": zod.coerce.date().nullable(),
   "fundingAmount": zod.number().nullable(),
-  "headquarters": zod.string(),
-  "productCategory": zod.string(),
+  "headquarters": zod.string().nullable(),
+  "productCategory": zod.array(zod.string()),
   "technologyContext": zod.string(),
   "growthSignal": zod.string(),
   "icpFitScore": zod.number(),
@@ -680,7 +684,8 @@ export const GenerateBatchResponse = zod.object({
   "enterpriseIntentScore": zod.number(),
   "churnRiskScore": zod.number(),
   "outreachPriority": zod.enum(['High', 'Medium', 'Low', 'Suppress']),
-  "outreachStatus": zod.string().nullable()
+  "outreachStatus": zod.string().nullable(),
+  "triggeredEventTypes": zod.array(zod.string())
 }))
 })
 

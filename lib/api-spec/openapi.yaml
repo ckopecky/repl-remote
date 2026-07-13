@@ -74,6 +74,12 @@ paths:
           required: false
           schema:
             $ref: "#/components/schemas/OutreachStatus"
+        - name: eventType
+          in: query
+          required: false
+          description: Filter to prospects who have triggered at least one event of this type.
+          schema:
+            type: string
         - name: search
           in: query
           required: false
@@ -543,6 +549,7 @@ components:
         - domain
         - industry
         - employeeCount
+        - employeeRange
         - fundingStage
         - latestFundingDate
         - fundingAmount
@@ -556,13 +563,14 @@ components:
         id: { type: integer }
         name: { type: string }
         domain: { type: string }
-        industry: { type: string }
+        industry: { type: array, items: { type: string } }
         employeeCount: { type: integer }
-        fundingStage: { type: string }
+        employeeRange: { type: array, items: { type: string } }
+        fundingStage: { type: array, items: { type: string } }
         latestFundingDate: { type: ["string", "null"], format: date }
         fundingAmount: { type: ["integer", "null"] }
-        headquarters: { type: string }
-        productCategory: { type: string }
+        headquarters: { type: ["string", "null"] }
+        productCategory: { type: array, items: { type: string } }
         technologyContext: { type: string }
         growthSignal: { type: string }
         icpFitScore: { type: number }
@@ -814,6 +822,7 @@ components:
         - churnRiskScore
         - outreachPriority
         - outreachStatus
+        - triggeredEventTypes
       properties:
         personId: { type: integer }
         firstName: { type: string }
@@ -832,6 +841,9 @@ components:
           $ref: "#/components/schemas/OutreachPriority"
         outreachStatus:
           type: ["string", "null"]
+        triggeredEventTypes:
+          type: array
+          items: { type: string }
 
     ProspectDetail:
       type: object

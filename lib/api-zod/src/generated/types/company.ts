@@ -10,15 +10,17 @@ export interface Company {
   id: number;
   name: string;
   domain: string;
-  industry: string;
+  industry: string[];
   employeeCount: number;
-  fundingStage: string;
+  employeeRange: string[];
+  fundingStage: string[];
   /** @nullable */
   latestFundingDate: Date | null;
   /** @nullable */
   fundingAmount: number | null;
-  headquarters: string;
-  productCategory: string;
+  /** @nullable */
+  headquarters: string | null;
+  productCategory: string[];
   technologyContext: string;
   growthSignal: string;
   icpFitScore: number;

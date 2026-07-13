@@ -38,7 +38,7 @@ export function buildAttioExportPreview(input: {
     values: {
       domains: [company.domain],
       name: company.name,
-      description: `${company.industry} · ${company.employeeCount} employees · ${company.fundingStage}. ${company.growthSignal}.`,
+      description: buildCompanyDescription(company),
     },
   };
 
@@ -80,6 +80,14 @@ export interface AttioSyncFailure {
 }
 
 export type AttioSyncResult = AttioSyncSuccess | AttioSyncFailure;
+
+/** Formats a company's now-multi-valued industry/funding/headcount fields into one readable line. */
+function buildCompanyDescription(company: Company): string {
+  const industry = company.industry.join(", ");
+  const currentFundingStage = company.fundingStage[company.fundingStage.length - 1] ?? "Unknown";
+  const employeeRange = company.employeeRange.join(", ");
+  return `${industry} · ${company.employeeCount} employees (${employeeRange}) · ${currentFundingStage}. ${company.growthSignal}.`;
+}
 
 function buildNoteContent(outreachPackage: OutreachPackage): string {
   return [
@@ -135,7 +143,7 @@ export async function syncOutreachPackageToAttio(input: {
     const companyRecord = await upsertAttioRecord("companies", "domains", {
       domains: [company.domain],
       name: company.name,
-      description: `${company.industry} · ${company.employeeCount} employees · ${company.fundingStage}. ${company.growthSignal}.`,
+      description: buildCompanyDescription(company),
     });
     const companyRecordId = companyRecord.data.id.record_id;
 
