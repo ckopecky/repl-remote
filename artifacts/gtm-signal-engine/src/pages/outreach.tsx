@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useListOutreachPackages, useUpdateOutreachPackage, useGetAttioExportPreview, useSyncOutreachPackageToAttio } from "@workspace/api-client-react";
+import { useListOutreachPackages, useUpdateOutreachPackage, useGetAttioExportPreview, useSyncOutreachPackageToAttio, useGenerateOutreachPackageContent } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Send, FileJson, Check, X, ExternalLink, AlertTriangle, RefreshCw, CloudUpload } from "lucide-react";
+import { Send, FileJson, Check, X, ExternalLink, AlertTriangle, RefreshCw, CloudUpload, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { OutreachStatus } from "@workspace/api-client-react";
 
@@ -44,6 +44,19 @@ export default function OutreachQueue() {
         }
       },
       onError: () => toast({ title: "Attio sync failed", variant: "destructive" })
+    }
+  });
+
+  const generateMut = useGenerateOutreachPackageContent({
+    mutation: {
+      onSuccess: (data: any) => {
+        if (data?.generationStatus === "generated") {
+          toast({ title: "Outreach content generated", description: "The LLM drafted a research summary, angle, and email." });
+        } else {
+          toast({ title: "Generation failed", description: data?.generationError, variant: "destructive" });
+        }
+      },
+      onError: () => toast({ title: "Generation failed", variant: "destructive" })
     }
   });
 
@@ -133,6 +146,16 @@ export default function OutreachQueue() {
                             <TooltipContent className="max-w-xs">{(pkg as any).attioSyncError}</TooltipContent>
                           </Tooltip>
                         )}
+                        {(pkg as any).generationStatus === "failed" && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-xs text-destructive flex items-center gap-1 cursor-default">
+                                <Sparkles className="w-3 h-3" /> Generation failed
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">{(pkg as any).generationError}</TooltipContent>
+                          </Tooltip>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -145,6 +168,17 @@ export default function OutreachQueue() {
                           <FileJson className="w-4 h-4 mr-1.5" />
                           Payload
                         </Button>
+
+                        {(pkg as any).generationStatus === "failed" && (
+                          <Button
+                            variant="outline" size="sm" className="h-8"
+                            disabled={generateMut.isPending}
+                            onClick={() => generateMut.mutate({ id: pkg.id })}
+                          >
+                            <Sparkles className="w-4 h-4 mr-1.5" />
+                            Retry Generation
+                          </Button>
+                        )}
 
                         {(pkg as any).attioSyncStatus === "error" && (
                           <Button
@@ -224,14 +258,20 @@ function ExportPreviewDialog({ id, open, onOpenChange }: { id: number | null, op
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">Loading payload...</div>
         ) : data ? (
-          <Tabs defaultValue="person" className="flex-1 flex flex-col min-h-0 mt-4">
+          <Tabs defaultValue="note" className="flex-1 flex flex-col min-h-0 mt-4">
             <TabsList>
+              <TabsTrigger value="note">Outreach Note</TabsTrigger>
               <TabsTrigger value="person">Person Record</TabsTrigger>
               <TabsTrigger value="company">Company Record</TabsTrigger>
-              <TabsTrigger value="note">Outreach Note</TabsTrigger>
             </TabsList>
-            
-            {["person", "company", "note"].map((key) => (
+
+            <TabsContent value="note" className="flex-1 min-h-0 m-0 mt-2 border rounded-md overflow-hidden">
+              <pre className="p-4 bg-muted/30 h-full overflow-auto text-sm font-sans whitespace-pre-wrap">
+                {(data as any).note?.content ?? "No content yet -- generate this package first."}
+              </pre>
+            </TabsContent>
+
+            {["person", "company"].map((key) => (
               <TabsContent key={key} value={key} className="flex-1 min-h-0 m-0 mt-2 border rounded-md overflow-hidden">
                 <pre className="p-4 bg-muted/30 h-full overflow-auto text-xs font-mono">
                   {JSON.stringify((data as any)[key], null, 2)}

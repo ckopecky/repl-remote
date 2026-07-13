@@ -987,6 +987,77 @@ export const useSyncOutreachPackageToAttio = <TError = ErrorType<ErrorResponse |
       return useMutation(getSyncOutreachPackageToAttioMutationOptions(options));
     }
 
+export const getGenerateOutreachPackageContentUrl = (id: number,) => {
+
+
+
+
+  return `/api/outreach-packages/${id}/generate`
+}
+
+/**
+ * @summary Generate (or regenerate) this package's outreach angle, research summary, and draft outreach email using a real LLM call over the behavioral trail and company context. Moves the package to "Needs Review" on success.
+ */
+export const generateOutreachPackageContent = async (id: number, options?: RequestInit): Promise<OutreachPackage> => {
+
+  return customFetch<OutreachPackage>(getGenerateOutreachPackageContentUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getGenerateOutreachPackageContentMutationOptions = <TError = ErrorType<ErrorResponse | OutreachPackage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateOutreachPackageContent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateOutreachPackageContent>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['generateOutreachPackageContent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateOutreachPackageContent>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  generateOutreachPackageContent(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateOutreachPackageContentMutationResult = NonNullable<Awaited<ReturnType<typeof generateOutreachPackageContent>>>
+
+    export type GenerateOutreachPackageContentMutationError = ErrorType<ErrorResponse | OutreachPackage>
+
+    /**
+ * @summary Generate (or regenerate) this package's outreach angle, research summary, and draft outreach email using a real LLM call over the behavioral trail and company context. Moves the package to "Needs Review" on success.
+ */
+export const useGenerateOutreachPackageContent = <TError = ErrorType<ErrorResponse | OutreachPackage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateOutreachPackageContent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateOutreachPackageContent>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getGenerateOutreachPackageContentMutationOptions(options));
+    }
+
 export const getGetAttioExportPreviewUrl = (id: number,) => {
 
 

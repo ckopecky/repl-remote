@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AttioSyncStatus } from './attioSyncStatus';
+import type { GenerationStatus } from './generationStatus';
 import type { OutreachPriority } from './outreachPriority';
 import type { OutreachStatus } from './outreachStatus';
 
@@ -20,6 +21,8 @@ export interface OutreachPackageListItem {
   outreachAngle: string;
   status: OutreachStatus;
   attioSyncStatus: AttioSyncStatus;
+  generationStatus: GenerationStatus;
+  generationError: string | null;
   attioPersonWebUrl: string | null;
   attioSyncError: string | null;
   createdAt: Date;

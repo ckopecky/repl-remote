@@ -37,6 +37,11 @@ export const outreachPackagesTable = pgTable("outreach_packages", {
   attioPersonWebUrl: text("attio_person_web_url"),
   attioSyncError: text("attio_sync_error"),
   attioSyncedAt: timestamp("attio_synced_at", { withTimezone: true }),
+  generationStatus: text("generation_status").notNull().default("pending"),
+  generationError: text("generation_error"),
+  agentConfidence: text("agent_confidence"),
+  outreachEmailSubject: text("outreach_email_subject").notNull().default(""),
+  outreachEmailBody: text("outreach_email_body").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

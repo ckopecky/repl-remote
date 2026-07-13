@@ -5,7 +5,9 @@
  * Synthetic GTM Signal Engine API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AgentConfidence } from './agentConfidence';
 import type { AttioSyncStatus } from './attioSyncStatus';
+import type { GenerationStatus } from './generationStatus';
 import type { OutreachStatus } from './outreachStatus';
 
 export interface OutreachPackage {
@@ -30,5 +32,10 @@ export interface OutreachPackage {
   attioSyncError: string | null;
   /** @nullable */
   attioSyncedAt: Date | null;
+  generationStatus: GenerationStatus;
+  generationError: string | null;
+  agentConfidence: AgentConfidence | null;
+  outreachEmailSubject: string;
+  outreachEmailBody: string;
   createdAt: Date;
 }

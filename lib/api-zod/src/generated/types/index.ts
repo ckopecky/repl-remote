@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './agentConfidence';
 export * from './archetype';
 export * from './archetypeInfo';
 export * from './assessmentScoreChange';
@@ -23,6 +24,7 @@ export * from './errorResponse';
 export * from './generateBatchInput';
 export * from './generateBatchResult';
 export * from './generateProspectInput';
+export * from './generationStatus';
 export * from './growthHypothesis';
 export * from './growthHypothesisInput';
 export * from './growthHypothesisSaveResult';

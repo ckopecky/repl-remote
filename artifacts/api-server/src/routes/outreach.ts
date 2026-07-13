@@ -22,7 +22,9 @@ import {
   GetAttioExportPreviewResponse,
 } from "@workspace/api-zod";
 import { PROMPT_VERSION } from "../lib/gtm/constants";
+import type { Archetype } from "../lib/gtm/constants";
 import { buildAttioExportPreview, syncOutreachPackageToAttio } from "../lib/gtm/attio";
+import { generateOutreachContent } from "../lib/gtm/llm";
 
 const router: IRouter = Router();
 
@@ -48,6 +50,8 @@ router.get("/outreach-packages", async (req, res): Promise<void> => {
       attioSyncStatus: outreachPackagesTable.attioSyncStatus,
       attioPersonWebUrl: outreachPackagesTable.attioPersonWebUrl,
       attioSyncError: outreachPackagesTable.attioSyncError,
+      generationStatus: outreachPackagesTable.generationStatus,
+      generationError: outreachPackagesTable.generationError,
       createdAt: outreachPackagesTable.createdAt,
     })
     .from(outreachPackagesTable)
@@ -70,6 +74,8 @@ router.get("/outreach-packages", async (req, res): Promise<void> => {
     attioSyncStatus: r.attioSyncStatus,
     attioPersonWebUrl: r.attioPersonWebUrl,
     attioSyncError: r.attioSyncError,
+    generationStatus: r.generationStatus,
+    generationError: r.generationError,
     createdAt: r.createdAt,
   }));
 
@@ -111,6 +117,8 @@ router.post("/outreach-packages", async (req, res): Promise<void> => {
         ? "Enterprise research signal"
         : "Purchase intent signal";
 
+  // Placeholder research summary/angle -- deterministic, grounded in scores only. This is
+  // what "Researching" means before generation runs: quantitative facts, no real reasoning yet.
   const researchSummary = `${assessment.rationale} ${assessment.riskNotes}`;
 
   const [outreachPackage] = await db
@@ -128,6 +136,7 @@ router.post("/outreach-packages", async (req, res): Promise<void> => {
       promptVersion: PROMPT_VERSION,
       status: "Researching",
       exportedToAttio: false,
+      generationStatus: "pending",
     })
     .returning();
   if (!outreachPackage) {
@@ -136,7 +145,8 @@ router.post("/outreach-packages", async (req, res): Promise<void> => {
     return;
   }
 
-  res.status(201).json(CreateOutreachPackageResponse.parse(outreachPackage));
+  const generated = await runGeneration(outreachPackage.id);
+  res.status(201).json(CreateOutreachPackageResponse.parse(generated));
 });
 
 router.get("/outreach-packages/:id", async (req, res): Promise<void> => {
@@ -198,6 +208,80 @@ router.patch("/outreach-packages/:id", async (req, res): Promise<void> => {
   }
 
   res.json(UpdateOutreachPackageResponse.parse(updated));
+});
+
+async function runGeneration(outreachPackageId: number) {
+  const [outreachPackage] = await db
+    .select()
+    .from(outreachPackagesTable)
+    .where(eq(outreachPackagesTable.id, outreachPackageId));
+  if (!outreachPackage) {
+    throw new Error(`Outreach package ${outreachPackageId} not found`);
+  }
+  const [person] = await db.select().from(peopleTable).where(eq(peopleTable.id, outreachPackage.personId));
+  const [company] = await db
+    .select()
+    .from(companiesTable)
+    .where(eq(companiesTable.id, outreachPackage.companyId));
+  if (!person || !company) {
+    throw new Error(`Person or company not found for outreach package ${outreachPackageId}`);
+  }
+
+  const result = await generateOutreachContent({
+    company,
+    person,
+    archetype: person.archetype as Archetype,
+    behavioralTrail: outreachPackage.behavioralTrail,
+    behaviorSummary: outreachPackage.behaviorSummary,
+    outreachPriority: outreachPackage.sourceSignal,
+    sourceSignal: outreachPackage.sourceSignal,
+  });
+
+  const [saved] = await db
+    .update(outreachPackagesTable)
+    .set(
+      result.ok
+        ? {
+            generationStatus: "generated",
+            generationError: null,
+            agentConfidence: result.content.confidence,
+            outreachAngle: result.content.outreachAngle,
+            researchSummary: `${result.content.verdictReason} ${result.content.researchSummary}`,
+            outreachEmailSubject: result.content.emailSubject,
+            outreachEmailBody: result.content.emailBody,
+            status: "Needs Review",
+          }
+        : {
+            generationStatus: "failed",
+            generationError: result.error,
+          },
+    )
+    .where(eq(outreachPackagesTable.id, outreachPackageId))
+    .returning();
+
+  return saved!;
+}
+
+router.post("/outreach-packages/:id/generate", async (req, res): Promise<void> => {
+  const params = GetOutreachPackageParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(outreachPackagesTable)
+    .where(eq(outreachPackagesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Outreach package not found" });
+    return;
+  }
+
+  const outreachPackage = await runGeneration(params.data.id);
+  res.status(outreachPackage.generationStatus === "failed" ? 502 : 200).json(
+    GetOutreachPackageResponse.parse(outreachPackage),
+  );
 });
 
 async function runAttioSync(outreachPackageId: number) {

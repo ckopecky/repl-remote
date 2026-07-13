@@ -308,6 +308,40 @@ paths:
               schema:
                 $ref: "#/components/schemas/OutreachPackage"
 
+  /outreach-packages/{id}/generate:
+    post:
+      operationId: generateOutreachPackageContent
+      tags: [outreach]
+      summary: >-
+        Generate (or regenerate) this package's outreach angle, research summary, and
+        draft outreach email using a real LLM call over the behavioral trail and company
+        context. Moves the package to "Needs Review" on success.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated outreach package with generated content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutreachPackage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Generation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutreachPackage"
+
   /outreach-packages/{id}/attio-export:
     get:
       operationId: getAttioExportPreview
@@ -849,6 +883,11 @@ components:
         - attioPersonWebUrl
         - attioSyncError
         - attioSyncedAt
+        - generationStatus
+        - generationError
+        - agentConfidence
+        - outreachEmailSubject
+        - outreachEmailBody
         - createdAt
       properties:
         id: { type: integer }
@@ -890,11 +929,31 @@ components:
             - type: string
             - type: "null"
         attioSyncedAt: { type: ["string", "null"], format: date-time }
+        generationStatus:
+          $ref: "#/components/schemas/GenerationStatus"
+        generationError:
+          oneOf:
+            - type: string
+            - type: "null"
+        agentConfidence:
+          oneOf:
+            - $ref: "#/components/schemas/AgentConfidence"
+            - type: "null"
+        outreachEmailSubject: { type: string }
+        outreachEmailBody: { type: string }
         createdAt: { type: string, format: date-time }
 
     AttioSyncStatus:
       type: string
       enum: [not_synced, synced, error]
+
+    GenerationStatus:
+      type: string
+      enum: [pending, generated, failed]
+
+    AgentConfidence:
+      type: string
+      enum: [low, medium, high]
 
     OutreachPackageListItem:
       type: object
@@ -911,6 +970,8 @@ components:
         - attioSyncStatus
         - attioPersonWebUrl
         - attioSyncError
+        - generationStatus
+        - generationError
         - createdAt
       properties:
         id: { type: integer }
@@ -926,6 +987,12 @@ components:
           $ref: "#/components/schemas/OutreachStatus"
         attioSyncStatus:
           $ref: "#/components/schemas/AttioSyncStatus"
+        generationStatus:
+          $ref: "#/components/schemas/GenerationStatus"
+        generationError:
+          oneOf:
+            - type: string
+            - type: "null"
         attioPersonWebUrl:
           oneOf:
             - type: string

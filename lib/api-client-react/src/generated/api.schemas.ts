@@ -230,6 +230,24 @@ export const AttioSyncStatus = {
   error: 'error',
 } as const;
 
+export type GenerationStatus = typeof GenerationStatus[keyof typeof GenerationStatus];
+
+
+export const GenerationStatus = {
+  pending: 'pending',
+  generated: 'generated',
+  failed: 'failed',
+} as const;
+
+export type AgentConfidence = typeof AgentConfidence[keyof typeof AgentConfidence];
+
+
+export const AgentConfidence = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
 export interface OutreachPackage {
   id: number;
   personId: number;
@@ -252,6 +270,11 @@ export interface OutreachPackage {
   attioSyncError: string | null;
   /** @nullable */
   attioSyncedAt: string | null;
+  generationStatus: GenerationStatus;
+  generationError: string | null;
+  agentConfidence: AgentConfidence | null;
+  outreachEmailSubject: string;
+  outreachEmailBody: string;
   createdAt: string;
 }
 
@@ -275,6 +298,8 @@ export interface OutreachPackageListItem {
   outreachAngle: string;
   status: OutreachStatus;
   attioSyncStatus: AttioSyncStatus;
+  generationStatus: GenerationStatus;
+  generationError: string | null;
   attioPersonWebUrl: string | null;
   attioSyncError: string | null;
   createdAt: string;
