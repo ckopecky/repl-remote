@@ -45,6 +45,9 @@ router.get("/outreach-packages", async (req, res): Promise<void> => {
       outreachPriority: researchAssessmentsTable.outreachPriority,
       outreachAngle: outreachPackagesTable.outreachAngle,
       status: outreachPackagesTable.status,
+      attioSyncStatus: outreachPackagesTable.attioSyncStatus,
+      attioPersonWebUrl: outreachPackagesTable.attioPersonWebUrl,
+      attioSyncError: outreachPackagesTable.attioSyncError,
       createdAt: outreachPackagesTable.createdAt,
     })
     .from(outreachPackagesTable)
@@ -64,6 +67,9 @@ router.get("/outreach-packages", async (req, res): Promise<void> => {
     outreachPriority: r.outreachPriority,
     outreachAngle: r.outreachAngle,
     status: r.status,
+    attioSyncStatus: r.attioSyncStatus,
+    attioPersonWebUrl: r.attioPersonWebUrl,
+    attioSyncError: r.attioSyncError,
     createdAt: r.createdAt,
   }));
 

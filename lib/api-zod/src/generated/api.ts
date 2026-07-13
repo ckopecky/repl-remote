@@ -300,6 +300,9 @@ export const ListOutreachPackagesResponseItem = zod.object({
   "outreachPriority": zod.enum(['High', 'Medium', 'Low', 'Suppress']),
   "outreachAngle": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
+  "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
+  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
+  "attioSyncError": zod.union([zod.string(),zod.null()]),
   "createdAt": zod.coerce.date()
 })
 export const ListOutreachPackagesResponse = zod.array(ListOutreachPackagesResponseItem)

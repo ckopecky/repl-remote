@@ -274,6 +274,9 @@ export interface OutreachPackageListItem {
   outreachPriority: OutreachPriority;
   outreachAngle: string;
   status: OutreachStatus;
+  attioSyncStatus: AttioSyncStatus;
+  attioPersonWebUrl: string | null;
+  attioSyncError: string | null;
   createdAt: string;
 }
 

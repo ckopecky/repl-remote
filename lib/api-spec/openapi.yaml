@@ -908,6 +908,9 @@ components:
         - outreachPriority
         - outreachAngle
         - status
+        - attioSyncStatus
+        - attioPersonWebUrl
+        - attioSyncError
         - createdAt
       properties:
         id: { type: integer }
@@ -921,6 +924,16 @@ components:
         outreachAngle: { type: string }
         status:
           $ref: "#/components/schemas/OutreachStatus"
+        attioSyncStatus:
+          $ref: "#/components/schemas/AttioSyncStatus"
+        attioPersonWebUrl:
+          oneOf:
+            - type: string
+            - type: "null"
+        attioSyncError:
+          oneOf:
+            - type: string
+            - type: "null"
         createdAt: { type: string, format: date-time }
 
     OutreachPackageInput:

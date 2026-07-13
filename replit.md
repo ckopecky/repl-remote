@@ -2,10 +2,12 @@
 
 A demo GTM signal pipeline built entirely on synthetic/fictional data: it enriches
 synthetic companies and people, generates realistic product-analytics event timelines,
-builds human-readable behavioral trails, scores and prioritizes prospects against an
-editable growth hypothesis, and previews Attio-shaped outreach export payloads (Attio
-itself is never called). See `artifacts/gtm-signal-engine/README.md` for full
-architecture, data model, event taxonomy, and scoring documentation.
+builds human-readable behavioral trails, and scores and prioritizes prospects against an
+editable growth hypothesis. The one real, live integration is Attio: marking an
+outreach package "Sent" pushes a real Company/Person upsert + outreach Note to the
+connected Attio workspace via `ATTIO_API_KEY`. See
+`artifacts/gtm-signal-engine/README.md` for full architecture, data model, event
+taxonomy, scoring, and Attio sync documentation.
 
 ## Run & Operate
 
@@ -32,7 +34,7 @@ architecture, data model, event taxonomy, and scoring documentation.
 
 - `artifacts/gtm-signal-engine/` — frontend (Dashboard, Prospects, Prospect Detail, Growth Hypothesis, Outreach Queue, Demo Controls)
 - `artifacts/api-server/src/routes/` — Express routers (dashboard, prospects, hypotheses, outreach, demo)
-- `artifacts/api-server/src/lib/gtm/` — all product logic: event generation, trail building, scoring, hypothesis defaults, seed/demo orchestration, Attio export payload building
+- `artifacts/api-server/src/lib/gtm/` — all product logic: event generation, trail building, scoring, hypothesis defaults, seed/demo orchestration, Attio export payload preview + real sync (`attio.ts`, `attioClient.ts`)
 - `lib/db/src/schema/` — Drizzle schema (source of truth for the 7 tables)
 - `lib/api-spec/openapi.yaml` — source of truth for the API contract
 - `lib/api-zod/`, `lib/api-client-react/` — generated Zod schemas + React Query hooks (regenerate via codegen, never hand-edit `generated/`)
@@ -50,9 +52,9 @@ architecture, data model, event taxonomy, and scoring documentation.
 Screens: Dashboard (pipeline overview), Prospects (filterable/sortable list), Prospect
 Detail (scores, rationale, behavioral trail, raw events, queue-outreach action), Growth
 Hypothesis (edit weights/guidance, version history, recalculate diff), Outreach Queue
-(status workflow, Attio export payload preview), Demo Controls (generate/simulate/reset
-synthetic data). A persistent "Synthetic Demo Data" badge is shown in the nav at all
-times.
+(status workflow, payload preview, real Attio sync status/retry on Sent), Demo Controls
+(generate/simulate/reset synthetic data). A persistent "Synthetic Demo Data" badge is
+shown in the nav at all times.
 
 ## User preferences
 
