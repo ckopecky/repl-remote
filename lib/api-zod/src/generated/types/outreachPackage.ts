@@ -5,6 +5,7 @@
  * Synthetic GTM Signal Engine API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AttioSyncStatus } from './attioSyncStatus';
 import type { OutreachStatus } from './outreachStatus';
 
 export interface OutreachPackage {
@@ -21,5 +22,13 @@ export interface OutreachPackage {
   promptVersion: string;
   status: OutreachStatus;
   exportedToAttio: boolean;
+  attioSyncStatus: AttioSyncStatus;
+  attioCompanyRecordId: string | null;
+  attioPersonRecordId: string | null;
+  attioNoteId: string | null;
+  attioPersonWebUrl: string | null;
+  attioSyncError: string | null;
+  /** @nullable */
+  attioSyncedAt: Date | null;
   createdAt: Date;
 }

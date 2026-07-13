@@ -30,6 +30,13 @@ export const outreachPackagesTable = pgTable("outreach_packages", {
   promptVersion: text("prompt_version").notNull(),
   status: text("status").notNull().default("Researching"),
   exportedToAttio: boolean("exported_to_attio").notNull().default(false),
+  attioSyncStatus: text("attio_sync_status").notNull().default("not_synced"),
+  attioCompanyRecordId: text("attio_company_record_id"),
+  attioPersonRecordId: text("attio_person_record_id"),
+  attioNoteId: text("attio_note_id"),
+  attioPersonWebUrl: text("attio_person_web_url"),
+  attioSyncError: text("attio_sync_error"),
+  attioSyncedAt: timestamp("attio_synced_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

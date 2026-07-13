@@ -277,6 +277,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /outreach-packages/{id}/attio-sync:
+    post:
+      operationId: syncOutreachPackageToAttio
+      tags: [outreach]
+      summary: Push this outreach package's company, person, and note to the connected Attio workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated outreach package with sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutreachPackage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Attio sync failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutreachPackage"
+
   /outreach-packages/{id}/attio-export:
     get:
       operationId: getAttioExportPreview
@@ -811,6 +842,13 @@ components:
         - promptVersion
         - status
         - exportedToAttio
+        - attioSyncStatus
+        - attioCompanyRecordId
+        - attioPersonRecordId
+        - attioNoteId
+        - attioPersonWebUrl
+        - attioSyncError
+        - attioSyncedAt
         - createdAt
       properties:
         id: { type: integer }
@@ -829,7 +867,34 @@ components:
         status:
           $ref: "#/components/schemas/OutreachStatus"
         exportedToAttio: { type: boolean }
+        attioSyncStatus:
+          $ref: "#/components/schemas/AttioSyncStatus"
+        attioCompanyRecordId:
+          oneOf:
+            - type: string
+            - type: "null"
+        attioPersonRecordId:
+          oneOf:
+            - type: string
+            - type: "null"
+        attioNoteId:
+          oneOf:
+            - type: string
+            - type: "null"
+        attioPersonWebUrl:
+          oneOf:
+            - type: string
+            - type: "null"
+        attioSyncError:
+          oneOf:
+            - type: string
+            - type: "null"
+        attioSyncedAt: { type: ["string", "null"], format: date-time }
         createdAt: { type: string, format: date-time }
+
+    AttioSyncStatus:
+      type: string
+      enum: [not_synced, synced, error]
 
     OutreachPackageListItem:
       type: object
@@ -890,25 +955,24 @@ components:
           type: object
           additionalProperties: true
 
-    AttioEmailPayload:
+    AttioNotePayload:
       type: object
-      required: [objectSlug, values]
+      required: [parentObject, title, content]
       properties:
-        objectSlug: { type: string }
-        values:
-          type: object
-          additionalProperties: true
+        parentObject: { type: string }
+        title: { type: string }
+        content: { type: string }
 
     AttioExportPreview:
       type: object
-      required: [company, person, email]
+      required: [company, person, note]
       properties:
         company:
           $ref: "#/components/schemas/AttioCompanyPayload"
         person:
           $ref: "#/components/schemas/AttioPersonPayload"
-        email:
-          $ref: "#/components/schemas/AttioEmailPayload"
+        note:
+          $ref: "#/components/schemas/AttioNotePayload"
 
     DashboardSummary:
       type: object

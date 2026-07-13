@@ -22,7 +22,7 @@ import {
   GetAttioExportPreviewResponse,
 } from "@workspace/api-zod";
 import { PROMPT_VERSION } from "../lib/gtm/constants";
-import { buildAttioExportPreview } from "../lib/gtm/attio";
+import { buildAttioExportPreview, syncOutreachPackageToAttio } from "../lib/gtm/attio";
 
 const router: IRouter = Router();
 
@@ -164,20 +164,100 @@ router.patch("/outreach-packages/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [outreachPackage] = await db
-    .update(outreachPackagesTable)
-    .set({
-      status: parsed.data.status,
-      exportedToAttio: parsed.data.status === "Sent" ? true : undefined,
-    })
-    .where(eq(outreachPackagesTable.id, params.data.id))
-    .returning();
-  if (!outreachPackage) {
+  const [existing] = await db
+    .select()
+    .from(outreachPackagesTable)
+    .where(eq(outreachPackagesTable.id, params.data.id));
+  if (!existing) {
     res.status(404).json({ error: "Outreach package not found" });
     return;
   }
 
-  res.json(UpdateOutreachPackageResponse.parse(outreachPackage));
+  const [updated] = await db
+    .update(outreachPackagesTable)
+    .set({ status: parsed.data.status })
+    .where(eq(outreachPackagesTable.id, params.data.id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "Outreach package not found" });
+    return;
+  }
+
+  // Automatically push to the connected Attio workspace the moment a package
+  // transitions into "Sent". This is a real write -- not a preview.
+  if (parsed.data.status === "Sent" && existing.status !== "Sent") {
+    const outreachPackage = await runAttioSync(updated.id);
+    res.json(UpdateOutreachPackageResponse.parse(outreachPackage));
+    return;
+  }
+
+  res.json(UpdateOutreachPackageResponse.parse(updated));
+});
+
+async function runAttioSync(outreachPackageId: number) {
+  const [outreachPackage] = await db
+    .select()
+    .from(outreachPackagesTable)
+    .where(eq(outreachPackagesTable.id, outreachPackageId));
+  if (!outreachPackage) {
+    throw new Error(`Outreach package ${outreachPackageId} not found`);
+  }
+  const [person] = await db.select().from(peopleTable).where(eq(peopleTable.id, outreachPackage.personId));
+  const [company] = await db
+    .select()
+    .from(companiesTable)
+    .where(eq(companiesTable.id, outreachPackage.companyId));
+  if (!person || !company) {
+    throw new Error(`Person or company not found for outreach package ${outreachPackageId}`);
+  }
+
+  const result = await syncOutreachPackageToAttio({ company, person, outreachPackage });
+
+  const [saved] = await db
+    .update(outreachPackagesTable)
+    .set(
+      result.ok
+        ? {
+            attioSyncStatus: "synced",
+            exportedToAttio: true,
+            attioCompanyRecordId: result.companyRecordId,
+            attioPersonRecordId: result.personRecordId,
+            attioPersonWebUrl: result.personWebUrl,
+            attioNoteId: result.noteId,
+            attioSyncedAt: result.syncedAt,
+            attioSyncError: null,
+          }
+        : {
+            attioSyncStatus: "error",
+            attioSyncError: result.error,
+          },
+    )
+    .where(eq(outreachPackagesTable.id, outreachPackageId))
+    .returning();
+
+  return saved!;
+}
+
+router.post("/outreach-packages/:id/attio-sync", async (req, res): Promise<void> => {
+  const params = GetOutreachPackageParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(outreachPackagesTable)
+    .where(eq(outreachPackagesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Outreach package not found" });
+    return;
+  }
+
+  const outreachPackage = await runAttioSync(params.data.id);
+  res.status(outreachPackage.attioSyncStatus === "error" ? 502 : 200).json(
+    GetOutreachPackageResponse.parse(outreachPackage),
+  );
 });
 
 router.get("/outreach-packages/:id/attio-export", async (req, res): Promise<void> => {

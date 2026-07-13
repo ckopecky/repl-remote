@@ -6,4 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AttioEmailPayloadValues = { [key: string]: unknown };
+export interface AttioNotePayload {
+  parentObject: string;
+  title: string;
+  content: string;
+}

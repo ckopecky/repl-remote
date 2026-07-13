@@ -183,7 +183,7 @@ export function DemoControls() {
               Re-evaluates every prospect against the current growth hypothesis weights.
             </p>
             <Button 
-              onClick={() => recalculate.mutate({})}
+              onClick={() => recalculate.mutate()}
               disabled={recalculate.isPending}
               className="w-full"
             >
@@ -200,7 +200,7 @@ export function DemoControls() {
           <div className="space-y-3">
             <Button 
               variant="outline" 
-              onClick={() => resetData.mutate({})}
+              onClick={() => resetData.mutate()}
               disabled={resetData.isPending}
               className="w-full justify-start text-muted-foreground hover:text-foreground"
             >
@@ -210,7 +210,7 @@ export function DemoControls() {
             
             <Button 
               variant="outline" 
-              onClick={() => reseedData.mutate({})}
+              onClick={() => reseedData.mutate()}
               disabled={reseedData.isPending}
               className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
             >

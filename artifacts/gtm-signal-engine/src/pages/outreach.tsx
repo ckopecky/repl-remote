@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useListOutreachPackages, useUpdateOutreachPackage, useGetAttioExportPreview } from "@workspace/api-client-react";
+import { useListOutreachPackages, useUpdateOutreachPackage, useGetAttioExportPreview, useSyncOutreachPackageToAttio } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Send, FileJson, Check, X, Clock, Pause, Play, RefreshCw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Send, FileJson, Check, X, ExternalLink, AlertTriangle, RefreshCw, CloudUpload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { OutreachStatus } from "@workspace/api-client-react";
 
@@ -20,8 +21,29 @@ export default function OutreachQueue() {
 
   const updateMut = useUpdateOutreachPackage({
     mutation: {
-      onSuccess: () => toast({ title: "Status updated" }),
+      onSuccess: (data: any) => {
+        if (data?.status === "Sent" && data?.attioSyncStatus === "synced") {
+          toast({ title: "Sent and synced to Attio", description: "Company, person, and note were pushed to your workspace." });
+        } else if (data?.status === "Sent" && data?.attioSyncStatus === "error") {
+          toast({ title: "Marked Sent, but Attio sync failed", description: data.attioSyncError, variant: "destructive" });
+        } else {
+          toast({ title: "Status updated" });
+        }
+      },
       onError: () => toast({ title: "Failed to update", variant: "destructive" })
+    }
+  });
+
+  const syncMut = useSyncOutreachPackageToAttio({
+    mutation: {
+      onSuccess: (data: any) => {
+        if (data?.attioSyncStatus === "synced") {
+          toast({ title: "Synced to Attio" });
+        } else {
+          toast({ title: "Attio sync failed", description: data?.attioSyncError, variant: "destructive" });
+        }
+      },
+      onError: () => toast({ title: "Attio sync failed", variant: "destructive" })
     }
   });
 
@@ -87,9 +109,31 @@ export default function OutreachQueue() {
                       {pkg.sourceSignal}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getStatusColor(pkg.status)}>
-                        {pkg.status}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className={getStatusColor(pkg.status)}>
+                          {pkg.status}
+                        </Badge>
+                        {(pkg as any).attioSyncStatus === "synced" && (pkg as any).attioPersonWebUrl && (
+                          <a
+                            href={(pkg as any).attioPersonWebUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+                          >
+                            <CloudUpload className="w-3 h-3" /> Synced to Attio <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        {(pkg as any).attioSyncStatus === "error" && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-xs text-destructive flex items-center gap-1 cursor-default">
+                                <AlertTriangle className="w-3 h-3" /> Attio sync failed
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">{(pkg as any).attioSyncError}</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -101,6 +145,17 @@ export default function OutreachQueue() {
                           <FileJson className="w-4 h-4 mr-1.5" />
                           Payload
                         </Button>
+
+                        {(pkg as any).attioSyncStatus === "error" && (
+                          <Button
+                            variant="outline" size="sm" className="h-8"
+                            disabled={syncMut.isPending}
+                            onClick={() => syncMut.mutate({ id: pkg.id })}
+                          >
+                            <RefreshCw className="w-4 h-4 mr-1.5" />
+                            Retry Sync
+                          </Button>
+                        )}
 
                         {pkg.status === OutreachStatus.Needs_Review && (
                           <>
@@ -122,9 +177,11 @@ export default function OutreachQueue() {
                         {(pkg.status === OutreachStatus.Approved || pkg.status === OutreachStatus.Generated) && (
                           <Button 
                             variant="default" size="sm" className="h-8"
+                            disabled={updateMut.isPending}
                             onClick={() => updateMut.mutate({ id: pkg.id, data: { status: OutreachStatus.Sent } })}
                           >
-                            Mark Sent
+                            <CloudUpload className="w-4 h-4 mr-1.5" />
+                            Send &amp; Sync to Attio
                           </Button>
                         )}
                       </div>
@@ -160,7 +217,7 @@ function ExportPreviewDialog({ id, open, onOpenChange }: { id: number | null, op
             Attio CRM Export Payload Preview
           </DialogTitle>
           <DialogDescription>
-            The exact JSON structure that will be sent to the Attio API.
+            The exact payloads that will be written to your Attio workspace when you sync.
           </DialogDescription>
         </DialogHeader>
 
@@ -171,10 +228,10 @@ function ExportPreviewDialog({ id, open, onOpenChange }: { id: number | null, op
             <TabsList>
               <TabsTrigger value="person">Person Record</TabsTrigger>
               <TabsTrigger value="company">Company Record</TabsTrigger>
-              <TabsTrigger value="email">GenAI Email</TabsTrigger>
+              <TabsTrigger value="note">Outreach Note</TabsTrigger>
             </TabsList>
             
-            {["person", "company", "email"].map((key) => (
+            {["person", "company", "note"].map((key) => (
               <TabsContent key={key} value={key} className="flex-1 min-h-0 m-0 mt-2 border rounded-md overflow-hidden">
                 <pre className="p-4 bg-muted/30 h-full overflow-auto text-xs font-mono">
                   {JSON.stringify((data as any)[key], null, 2)}

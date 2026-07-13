@@ -160,6 +160,13 @@ export const GetProspectDetailResponse = zod.object({
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
+  "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
+  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
+  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
+  "attioNoteId": zod.union([zod.string(),zod.null()]),
+  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
+  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioSyncedAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 }),zod.null()])
 })
@@ -320,6 +327,13 @@ export const CreateOutreachPackageResponse = zod.object({
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
+  "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
+  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
+  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
+  "attioNoteId": zod.union([zod.string(),zod.null()]),
+  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
+  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioSyncedAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -345,6 +359,13 @@ export const GetOutreachPackageResponse = zod.object({
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
+  "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
+  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
+  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
+  "attioNoteId": zod.union([zod.string(),zod.null()]),
+  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
+  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioSyncedAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -374,6 +395,45 @@ export const UpdateOutreachPackageResponse = zod.object({
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
+  "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
+  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
+  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
+  "attioNoteId": zod.union([zod.string(),zod.null()]),
+  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
+  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioSyncedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Push this outreach package's company, person, and note to the connected Attio workspace
+ */
+export const SyncOutreachPackageToAttioParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SyncOutreachPackageToAttioResponse = zod.object({
+  "id": zod.number(),
+  "personId": zod.number(),
+  "companyId": zod.number(),
+  "campaign": zod.string(),
+  "sourceSignal": zod.string(),
+  "behavioralTrail": zod.array(zod.string()),
+  "behaviorSummary": zod.string(),
+  "researchSummary": zod.string(),
+  "outreachAngle": zod.string(),
+  "hypothesisVersion": zod.string(),
+  "promptVersion": zod.string(),
+  "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
+  "exportedToAttio": zod.boolean(),
+  "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
+  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
+  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
+  "attioNoteId": zod.union([zod.string(),zod.null()]),
+  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
+  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioSyncedAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -394,9 +454,10 @@ export const GetAttioExportPreviewResponse = zod.object({
   "objectSlug": zod.string(),
   "values": zod.record(zod.string(), zod.unknown())
 }),
-  "email": zod.object({
-  "objectSlug": zod.string(),
-  "values": zod.record(zod.string(), zod.unknown())
+  "note": zod.object({
+  "parentObject": zod.string(),
+  "title": zod.string(),
+  "content": zod.string()
 })
 })
 
@@ -507,6 +568,13 @@ export const GenerateProspectResponse = zod.object({
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
+  "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
+  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
+  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
+  "attioNoteId": zod.union([zod.string(),zod.null()]),
+  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
+  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioSyncedAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 }),zod.null()])
 })

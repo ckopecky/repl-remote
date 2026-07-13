@@ -50,7 +50,7 @@ export default function Hypothesis() {
   };
 
   const updateWeight = (key: string, value: number[]) => {
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       signalWeights: { ...prev.signalWeights, [key]: value[0] }
     }));
@@ -106,14 +106,14 @@ export default function Hypothesis() {
                     <Label>Hypothesis Name</Label>
                     <Input 
                       value={formData.title} 
-                      onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      onChange={e => setFormData((prev: any) => ({ ...prev, title: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Thesis Description</Label>
                     <Textarea 
                       value={formData.description}
-                      onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={e => setFormData((prev: any) => ({ ...prev, description: e.target.value }))}
                       rows={3}
                     />
                   </div>
@@ -157,7 +157,7 @@ export default function Hypothesis() {
                 <CardContent>
                   <Textarea 
                     value={formData.knownLimitations}
-                    onChange={e => setFormData(prev => ({ ...prev, knownLimitations: e.target.value }))}
+                    onChange={e => setFormData((prev: any) => ({ ...prev, knownLimitations: e.target.value }))}
                     rows={2}
                     placeholder="E.g., Over-indexes on enterprise due to SSO weight..."
                   />

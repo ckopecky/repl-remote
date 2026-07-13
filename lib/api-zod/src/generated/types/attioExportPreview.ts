@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AttioCompanyPayload } from './attioCompanyPayload';
-import type { AttioEmailPayload } from './attioEmailPayload';
+import type { AttioNotePayload } from './attioNotePayload';
 import type { AttioPersonPayload } from './attioPersonPayload';
 
 export interface AttioExportPreview {
   company: AttioCompanyPayload;
   person: AttioPersonPayload;
-  email: AttioEmailPayload;
+  note: AttioNotePayload;
 }

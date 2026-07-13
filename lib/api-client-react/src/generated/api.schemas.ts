@@ -221,6 +221,15 @@ export interface ProspectListItem {
   outreachStatus: string | null;
 }
 
+export type AttioSyncStatus = typeof AttioSyncStatus[keyof typeof AttioSyncStatus];
+
+
+export const AttioSyncStatus = {
+  not_synced: 'not_synced',
+  synced: 'synced',
+  error: 'error',
+} as const;
+
 export interface OutreachPackage {
   id: number;
   personId: number;
@@ -235,6 +244,14 @@ export interface OutreachPackage {
   promptVersion: string;
   status: OutreachStatus;
   exportedToAttio: boolean;
+  attioSyncStatus: AttioSyncStatus;
+  attioCompanyRecordId: string | null;
+  attioPersonRecordId: string | null;
+  attioNoteId: string | null;
+  attioPersonWebUrl: string | null;
+  attioSyncError: string | null;
+  /** @nullable */
+  attioSyncedAt: string | null;
   createdAt: string;
 }
 
@@ -283,17 +300,16 @@ export interface AttioPersonPayload {
   values: AttioPersonPayloadValues;
 }
 
-export type AttioEmailPayloadValues = { [key: string]: unknown };
-
-export interface AttioEmailPayload {
-  objectSlug: string;
-  values: AttioEmailPayloadValues;
+export interface AttioNotePayload {
+  parentObject: string;
+  title: string;
+  content: string;
 }
 
 export interface AttioExportPreview {
   company: AttioCompanyPayload;
   person: AttioPersonPayload;
-  email: AttioEmailPayload;
+  note: AttioNotePayload;
 }
 
 export interface DashboardSummary {

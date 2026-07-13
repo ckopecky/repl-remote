@@ -277,7 +277,7 @@ export default function ProspectDetail() {
             <CardContent className="p-4 space-y-4">
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Department & Seniority</div>
-                <div className="text-sm font-medium">{company.department || "Unknown"} • {person.seniority}</div>
+                <div className="text-sm font-medium">{person.department || "Unknown"} • {person.seniority}</div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Assigned Persona</div>

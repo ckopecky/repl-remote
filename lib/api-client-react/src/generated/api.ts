@@ -916,6 +916,77 @@ export const useUpdateOutreachPackage = <TError = ErrorType<ErrorResponse>,
       return useMutation(getUpdateOutreachPackageMutationOptions(options));
     }
 
+export const getSyncOutreachPackageToAttioUrl = (id: number,) => {
+
+
+
+
+  return `/api/outreach-packages/${id}/attio-sync`
+}
+
+/**
+ * @summary Push this outreach package's company, person, and note to the connected Attio workspace
+ */
+export const syncOutreachPackageToAttio = async (id: number, options?: RequestInit): Promise<OutreachPackage> => {
+
+  return customFetch<OutreachPackage>(getSyncOutreachPackageToAttioUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncOutreachPackageToAttioMutationOptions = <TError = ErrorType<ErrorResponse | OutreachPackage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['syncOutreachPackageToAttio'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  syncOutreachPackageToAttio(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncOutreachPackageToAttioMutationResult = NonNullable<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>>
+
+    export type SyncOutreachPackageToAttioMutationError = ErrorType<ErrorResponse | OutreachPackage>
+
+    /**
+ * @summary Push this outreach package's company, person, and note to the connected Attio workspace
+ */
+export const useSyncOutreachPackageToAttio = <TError = ErrorType<ErrorResponse | OutreachPackage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncOutreachPackageToAttio>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getSyncOutreachPackageToAttioMutationOptions(options));
+    }
+
 export const getGetAttioExportPreviewUrl = (id: number,) => {
 
 
