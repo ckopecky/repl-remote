@@ -1,10 +1,16 @@
-# [Project name]
+# Synthetic GTM Signal Engine
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A demo GTM signal pipeline built entirely on synthetic/fictional data: it enriches
+synthetic companies and people, generates realistic product-analytics event timelines,
+builds human-readable behavioral trails, scores and prioritizes prospects against an
+editable growth hypothesis, and previews Attio-shaped outreach export payloads (Attio
+itself is never called). See `artifacts/gtm-signal-engine/README.md` for full
+architecture, data model, event taxonomy, and scoring documentation.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server
+- `pnpm --filter @workspace/gtm-signal-engine run dev` — run the frontend
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -19,26 +25,43 @@ _Replace the heading above with the project's name, and this line with one sente
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
+- Frontend: React + Vite, wouter routing, shadcn/ui, TanStack Query via generated hooks
+- Synthetic data: `@faker-js/faker`
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/gtm-signal-engine/` — frontend (Dashboard, Prospects, Prospect Detail, Growth Hypothesis, Outreach Queue, Demo Controls)
+- `artifacts/api-server/src/routes/` — Express routers (dashboard, prospects, hypotheses, outreach, demo)
+- `artifacts/api-server/src/lib/gtm/` — all product logic: event generation, trail building, scoring, hypothesis defaults, seed/demo orchestration, Attio export payload building
+- `lib/db/src/schema/` — Drizzle schema (source of truth for the 7 tables)
+- `lib/api-spec/openapi.yaml` — source of truth for the API contract
+- `lib/api-zod/`, `lib/api-client-react/` — generated Zod schemas + React Query hooks (regenerate via codegen, never hand-edit `generated/`)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Substituted the original spec's SQLite for this workspace's standard PostgreSQL + Drizzle stack — same entities and logic, different storage engine.
+- `archetype` was added to `people` (not in the original spec's field list) since both event generation and scoring need a stable ground-truth label per person.
+- `research_assessments` and `behavioral_trails` hold one current row per person (upserted on recalculation), not a full history — only `growth_hypotheses` preserves version history, per spec.
+- Scoring formulas (composite score, priority thresholds) were designed from scratch since the spec only gave qualitative rules — see the README's "Scoring model" section for the exact thresholds and reasoning.
+- Demo Controls consolidated under `/api/demo/*`; saving a new hypothesis (`POST /hypotheses`) also triggers a full recalculation and returns a before/after diff.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Screens: Dashboard (pipeline overview), Prospects (filterable/sortable list), Prospect
+Detail (scores, rationale, behavioral trail, raw events, queue-outreach action), Growth
+Hypothesis (edit weights/guidance, version history, recalculate diff), Outreach Queue
+(status workflow, Attio export payload preview), Demo Controls (generate/simulate/reset
+synthetic data). A persistent "Synthetic Demo Data" badge is shown in the nav at all
+times.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+_None recorded yet._
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Deep imports into `@workspace/api-client-react/src/generated/...` are not exported by the package — import generated types/schemas from the package root (`@workspace/api-client-react`) instead.
+- After changing scoring logic, existing seeded data has stale `outreachPriority` values until `/api/demo/recalculate` (or a reset/reseed) is run.
 
 ## Pointers
 

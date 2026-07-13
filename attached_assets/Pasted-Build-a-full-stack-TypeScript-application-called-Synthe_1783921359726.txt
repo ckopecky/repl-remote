@@ -1,0 +1,394 @@
+Build a full-stack TypeScript application called “Synthetic GTM Signal Engine.”
+
+This application recreates, using entirely fictional data, the architecture of a production GTM workflow that combined product behavior, enrichment, GTM research, a changing growth hypothesis, CRM records, and AI-generated outreach.
+
+The application must simulate the upstream data and decisioning layers. Attio will remain the external CRM and system of record for final people, companies, signals, and generated email records.
+
+Technology:
+
+* Node.js 20+
+* TypeScript
+* Express
+* React
+* SQLite
+* @faker-js/faker
+* Zod
+* No authentication required
+* Fixed Faker seed for reproducible demo data
+
+The application must contain six modules:
+
+1. Synthetic Enrichment
+2. Synthetic Product Analytics
+3. Behavioral Trail Builder
+4. GTM Research and Prioritization
+5. Growth Hypothesis Configuration
+6. Attio Export Preparation
+
+DATA MODELS
+
+Company:
+
+* id
+* name
+* domain
+* industry
+* employeeCount
+* fundingStage
+* latestFundingDate
+* fundingAmount
+* headquarters
+* productCategory
+* technologyContext
+* growthSignal
+* icpFitScore
+* createdAt
+
+Person:
+
+* id
+* firstName
+* lastName
+* email
+* profileUrl
+* title
+* department
+* seniority
+* persona
+* purchaseRole
+* startDate
+* companyId
+* contactPriority
+* signupDate
+* lifecycleStage
+
+ProductEvent:
+
+* id
+* personId
+* companyId
+* sessionId
+* eventName
+* eventCategory
+* occurredAt
+* source
+* properties as JSON
+
+BehavioralTrail:
+
+* id
+* personId
+* companyId
+* chronologicalTrail
+* behaviorSummary
+* firstActivationAt
+* lastActivityAt
+* generatedAt
+
+GrowthHypothesis:
+
+* id
+* version
+* title
+* description
+* signalWeights as JSON
+* messagingGuidance as JSON
+* knownLimitations
+* effectiveAt
+* updatedAt
+
+ResearchAssessment:
+
+* id
+* personId
+* companyId
+* hypothesisVersion
+* icpFitScore
+* personaFitScore
+* activationScore
+* collaborationScore
+* enterpriseIntentScore
+* purchaseIntentScore
+* churnRiskScore
+* outreachPriority
+* recommendedAngle
+* rationale
+* riskNotes
+* generatedAt
+
+OutreachPackage:
+
+* id
+* personId
+* companyId
+* campaign
+* sourceSignal
+* behavioralTrail
+* behaviorSummary
+* researchSummary
+* outreachAngle
+* hypothesisVersion
+* promptVersion
+* status
+* exportedToAttio
+* createdAt
+
+PRODUCT EVENTS
+
+Support:
+
+* user_signed_up
+* application_created
+* application_configured
+* organization_enabled
+* teammate_invited
+* sdk_installed
+* api_key_created
+* integration_error
+* documentation_viewed
+* sso_documentation_viewed
+* mfa_enabled
+* pricing_page_viewed
+* enterprise_page_viewed
+* checkout_started
+* subscription_started
+* inactive_period
+* returned_to_product
+
+ARCHETYPES
+
+Create realistic weighted event sequences for:
+
+1. Rapid Team Activator
+    Creates an application within 24 hours, enables an organization, invites teammates, and returns repeatedly.
+2. Enterprise Evaluator
+    Creates an application, enables an organization, views SSO and enterprise documentation, and visits pricing.
+3. Solo Builder
+    Creates one application and API key but shows little team or enterprise behavior.
+4. Stalled Implementer
+    Creates an application, encounters errors, repeatedly views documentation, and becomes inactive.
+5. Returning Evaluator
+    Initially becomes inactive, then returns, creates or configures an application, and views pricing or SSO resources.
+6. Converted Account
+    Activates, collaborates, evaluates advanced features, and starts a subscription.
+
+BEHAVIORAL TRAIL
+
+Preserve raw events.
+
+Build a chronological human-readable trail such as:
+“July 7: Signed up”
+“July 7: Created first application 12 minutes later”
+“July 8: Enabled an organization”
+“July 8: Invited three teammates”
+“July 10: Viewed SSO documentation twice”
+
+Generate a two-to-three sentence behavior summary.
+
+The behavior summary must:
+
+* Use only observed events
+* State time from signup to activation
+* Mention organization or application creation
+* Mention collaboration behavior
+* Mention enterprise or pricing research
+* Mention errors or inactivity
+* Avoid asserting intent as fact
+* Use terms such as “may indicate” or “suggests”
+* Clearly distinguish observed evidence from interpretation
+
+GROWTH HYPOTHESIS
+
+Create an editable Growth Hypothesis page.
+
+Default hypothesis version: v1.0
+
+Default rules:
+
+* Application creation within 24 hours is a strong activation signal.
+* Organization enablement is a stronger team signal than application creation alone.
+* Inviting two or more teammates indicates collaboration or expansion.
+* Repeated SSO documentation views may indicate enterprise requirements.
+* Pricing views without activation are weak intent signals.
+* Integration errors followed by inactivity increase churn risk.
+* Returning after inactivity may justify assistive outreach.
+* Subscription start represents conversion.
+
+Allow users to edit signal weights and save a new hypothesis version.
+
+When the hypothesis changes:
+
+* Preserve previous versions
+* Recalculate research assessments
+* Show which scores changed
+* Keep raw behavior unchanged
+
+PRIORITIZATION
+
+Calculate:
+
+* ICP fit
+* Persona fit
+* Activation
+* Collaboration
+* Enterprise intent
+* Purchase intent
+* Churn risk
+* Outreach priority
+
+Assign priority:
+
+* High
+* Medium
+* Low
+* Suppress
+
+Generate:
+
+* Recommended outreach angle
+* Rationale
+* Risk notes
+
+Examples of outreach angles:
+
+* Team expansion and emerging SSO requirements
+* Implementation assistance after repeated errors
+* Rapid activation and evaluation of advanced features
+* Returning evaluator showing renewed intent
+* Solo builder not yet ready for sales outreach
+
+OUTREACH PACKAGE
+
+Create an Outreach Package for high- and medium-priority prospects.
+
+It must include:
+
+* Person
+* Company
+* Campaign
+* Source signal
+* Full behavioral trail
+* Concise behavior summary
+* Research summary
+* Recommended outreach angle
+* Growth hypothesis version
+* Prompt version
+* Status
+
+Use these statuses:
+
+* Researching
+* Ready for Generation
+* Generated
+* Needs Review
+* Regeneration Requested
+* Regenerated
+* Approved
+* Rejected
+* Paused
+* Sent
+* Replied
+
+Do not generate emails yet.
+
+FRONTEND
+
+Dashboard:
+
+* Companies
+* People
+* Total events
+* Activated accounts
+* High-priority prospects
+* Enterprise evaluators
+* At-risk implementers
+* Converted accounts
+* Current hypothesis version
+
+Prospects:
+
+* Table of person, title, company, archetype, ICP fit, activation, enterprise intent, churn risk, priority, and status
+* Filters
+* Sorting
+
+Prospect Detail:
+
+* Person and company enrichment
+* Raw chronological event timeline
+* Behavioral trail
+* Behavior summary
+* Research scores
+* Recommended angle
+* Rationale
+* Risk notes
+* Growth hypothesis version
+* Button to create Outreach Package
+
+Growth Hypothesis:
+
+* Current rules and weights
+* Edit weights
+* Save new version
+* Compare versions
+* Recalculate assessments
+
+Outreach Queue:
+
+* Person
+* Company
+* Source signal
+* Priority
+* Recommended angle
+* Status
+* Export preview
+
+Demo Controls:
+
+* Generate one prospect by archetype
+* Generate 10 mixed prospects
+* Reset using fixed seed
+* Generate using new seed
+* Simulate seven additional days of activity
+* Recalculate using current hypothesis
+* Export selected Outreach Package as JSON
+
+ATTIO EXPORT
+
+Prepare an Attio-compatible export payload but do not call Attio yet.
+
+Create separate payload previews for:
+
+* Company record
+* Person record
+* Generative AI Email record
+
+The Generative AI Email payload should include:
+
+* Person relationship
+* Company relationship
+* Campaign
+* Source signal
+* Behavior trail
+* Behavior summary
+* Research summary
+* Outreach angle
+* Growth hypothesis version
+* Prompt version
+* Status = Ready for Generation
+
+Add a visible “Synthetic Demo Data” badge throughout the application.
+
+README
+
+Document:
+
+* Architecture
+* Which original production layer each module represents
+* Synthetic data guarantees
+* Data models
+* Event taxonomy
+* Growth hypothesis logic
+* Scoring logic
+* Attio export structure
+* Future generation and regeneration workflow
+* Statement that no real employer, customer, prospect, or product data is used

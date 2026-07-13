@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Synthetic GTM Signal Engine"
+version = "1.0.0"
+id = "artifacts/gtm-signal-engine"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24317
+
+[services.development]
+run = "pnpm --filter @workspace/gtm-signal-engine run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gtm-signal-engine", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/gtm-signal-engine/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24317"
+BASE_PATH = "/"

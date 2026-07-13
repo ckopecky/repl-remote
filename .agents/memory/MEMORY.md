@@ -1,0 +1,2 @@
+- [Orval generated package deep imports](orval-deep-imports.md) — `@workspace/api-client-react` only exports its package root; deep-importing `/src/generated/...` breaks Vite even though the file exists.
+- [Calibrating synthetic scoring thresholds](synthetic-scoring-calibration.md) — when designing your own composite-score buckets for qualitative spec rules, sanity-check against a generated sample before shipping; averaging many partially-applicable signals dilutes scores below naive thresholds.

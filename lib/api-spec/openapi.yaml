@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Synthetic GTM Signal Engine API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard summary
+  - name: prospects
+    description: Prospect list and detail
+  - name: hypotheses
+    description: Growth hypothesis versions
+  - name: outreach
+    description: Outreach package queue and Attio export
+  - name: demo
+    description: Demo data controls
 paths:
   /healthz:
     get:
@@ -24,6 +34,385 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary metrics
+      responses:
+        "200":
+          description: Summary metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /prospects:
+    get:
+      operationId: listProspects
+      tags: [prospects]
+      summary: List prospects with company, archetype, and scoring data
+      parameters:
+        - name: priority
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OutreachPriority"
+        - name: archetype
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Archetype"
+        - name: department
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OutreachStatus"
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              [
+                icpFitScore,
+                activationScore,
+                enterpriseIntentScore,
+                churnRiskScore,
+                outreachPriority,
+                createdAt,
+              ]
+        - name: sortDir
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        "200":
+          description: List of prospects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProspectListItem"
+
+  /prospects/{personId}:
+    get:
+      operationId: getProspectDetail
+      tags: [prospects]
+      summary: Get full prospect detail
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Prospect detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProspectDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /hypotheses:
+    get:
+      operationId: listHypotheses
+      tags: [hypotheses]
+      summary: List all growth hypothesis versions
+      responses:
+        "200":
+          description: List of hypothesis versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GrowthHypothesis"
+    post:
+      operationId: createHypothesis
+      tags: [hypotheses]
+      summary: Save a new growth hypothesis version and recalculate assessments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrowthHypothesisInput"
+      responses:
+        "201":
+          description: Created hypothesis and recalculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrowthHypothesisSaveResult"
+
+  /hypotheses/current:
+    get:
+      operationId: getCurrentHypothesis
+      tags: [hypotheses]
+      summary: Get the currently effective growth hypothesis
+      responses:
+        "200":
+          description: Current hypothesis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrowthHypothesis"
+
+  /outreach-packages:
+    get:
+      operationId: listOutreachPackages
+      tags: [outreach]
+      summary: List outreach packages (queue)
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OutreachStatus"
+      responses:
+        "200":
+          description: List of outreach packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OutreachPackageListItem"
+    post:
+      operationId: createOutreachPackage
+      tags: [outreach]
+      summary: Create an outreach package for a high/medium priority prospect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OutreachPackageInput"
+      responses:
+        "201":
+          description: Created outreach package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutreachPackage"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /outreach-packages/{id}:
+    get:
+      operationId: getOutreachPackage
+      tags: [outreach]
+      summary: Get an outreach package by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Outreach package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutreachPackage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateOutreachPackage
+      tags: [outreach]
+      summary: Update the status of an outreach package
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OutreachPackageUpdate"
+      responses:
+        "200":
+          description: Updated outreach package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutreachPackage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /outreach-packages/{id}/attio-export:
+    get:
+      operationId: getAttioExportPreview
+      tags: [outreach]
+      summary: Get Attio-compatible export payload previews for a package
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Attio export preview payloads
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttioExportPreview"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /demo/archetypes:
+    get:
+      operationId: listArchetypes
+      tags: [demo]
+      summary: List available behavioral archetypes
+      responses:
+        "200":
+          description: List of archetypes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArchetypeInfo"
+
+  /demo/generate-prospect:
+    post:
+      operationId: generateProspect
+      tags: [demo]
+      summary: Generate one synthetic prospect by archetype
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateProspectInput"
+      responses:
+        "201":
+          description: Generated prospect detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProspectDetail"
+
+  /demo/generate-batch:
+    post:
+      operationId: generateBatch
+      tags: [demo]
+      summary: Generate a mixed batch of synthetic prospects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateBatchInput"
+      responses:
+        "201":
+          description: Batch generation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateBatchResult"
+
+  /demo/reset:
+    post:
+      operationId: resetDemoData
+      tags: [demo]
+      summary: Reset all synthetic data using the fixed demo seed
+      responses:
+        "200":
+          description: Dashboard summary after reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /demo/reseed:
+    post:
+      operationId: reseedDemoData
+      tags: [demo]
+      summary: Regenerate all synthetic data using a new random seed
+      responses:
+        "200":
+          description: Dashboard summary after reseed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /demo/simulate-days:
+    post:
+      operationId: simulateDays
+      tags: [demo]
+      summary: Simulate additional days of product activity for existing prospects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulateDaysInput"
+      responses:
+        "200":
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulateDaysResult"
+
+  /demo/recalculate:
+    post:
+      operationId: recalculateAssessments
+      tags: [demo]
+      summary: Recalculate all research assessments using the current hypothesis
+      responses:
+        "200":
+          description: Recalculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecalculationResult"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +423,555 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    Archetype:
+      type: string
+      enum:
+        - rapid_team_activator
+        - enterprise_evaluator
+        - solo_builder
+        - stalled_implementer
+        - returning_evaluator
+        - converted_account
+
+    ArchetypeInfo:
+      type: object
+      required: [key, label, description]
+      properties:
+        key:
+          $ref: "#/components/schemas/Archetype"
+        label:
+          type: string
+        description:
+          type: string
+
+    OutreachPriority:
+      type: string
+      enum: [High, Medium, Low, Suppress]
+
+    OutreachStatus:
+      type: string
+      enum:
+        - Researching
+        - Ready for Generation
+        - Generated
+        - Needs Review
+        - Regeneration Requested
+        - Regenerated
+        - Approved
+        - Rejected
+        - Paused
+        - Sent
+        - Replied
+
+    Company:
+      type: object
+      required:
+        - id
+        - name
+        - domain
+        - industry
+        - employeeCount
+        - fundingStage
+        - latestFundingDate
+        - fundingAmount
+        - headquarters
+        - productCategory
+        - technologyContext
+        - growthSignal
+        - icpFitScore
+        - createdAt
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        domain: { type: string }
+        industry: { type: string }
+        employeeCount: { type: integer }
+        fundingStage: { type: string }
+        latestFundingDate: { type: ["string", "null"], format: date }
+        fundingAmount: { type: ["integer", "null"] }
+        headquarters: { type: string }
+        productCategory: { type: string }
+        technologyContext: { type: string }
+        growthSignal: { type: string }
+        icpFitScore: { type: number }
+        createdAt: { type: string, format: date-time }
+
+    Person:
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - profileUrl
+        - title
+        - department
+        - seniority
+        - persona
+        - purchaseRole
+        - startDate
+        - companyId
+        - archetype
+        - contactPriority
+        - signupDate
+        - lifecycleStage
+      properties:
+        id: { type: integer }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string }
+        profileUrl: { type: string }
+        title: { type: string }
+        department: { type: string }
+        seniority: { type: string }
+        persona: { type: string }
+        purchaseRole: { type: string }
+        startDate: { type: string, format: date-time }
+        companyId: { type: integer }
+        archetype:
+          $ref: "#/components/schemas/Archetype"
+        contactPriority: { type: string }
+        signupDate: { type: string, format: date-time }
+        lifecycleStage: { type: string }
+
+    ProductEvent:
+      type: object
+      required:
+        - id
+        - personId
+        - companyId
+        - sessionId
+        - eventName
+        - eventCategory
+        - occurredAt
+        - source
+        - properties
+      properties:
+        id: { type: integer }
+        personId: { type: integer }
+        companyId: { type: integer }
+        sessionId: { type: string }
+        eventName: { type: string }
+        eventCategory: { type: string }
+        occurredAt: { type: string, format: date-time }
+        source: { type: string }
+        properties:
+          type: object
+          additionalProperties: true
+
+    BehavioralTrail:
+      type: object
+      required:
+        - id
+        - personId
+        - companyId
+        - chronologicalTrail
+        - behaviorSummary
+        - firstActivationAt
+        - lastActivityAt
+        - generatedAt
+      properties:
+        id: { type: integer }
+        personId: { type: integer }
+        companyId: { type: integer }
+        chronologicalTrail:
+          type: array
+          items: { type: string }
+        behaviorSummary: { type: string }
+        firstActivationAt: { type: ["string", "null"], format: date-time }
+        lastActivityAt: { type: ["string", "null"], format: date-time }
+        generatedAt: { type: string, format: date-time }
+
+    SignalWeights:
+      type: object
+      description: Weight (0-1) applied to each behavioral signal rule when scoring a prospect
+      required:
+        - applicationWithin24h
+        - organizationEnablement
+        - teammateInvitesThreshold
+        - repeatedSsoDocViews
+        - pricingViewsWithoutActivation
+        - integrationErrorsThenInactivity
+        - returningAfterInactivity
+        - subscriptionStart
+      properties:
+        applicationWithin24h: { type: number }
+        organizationEnablement: { type: number }
+        teammateInvitesThreshold: { type: number }
+        repeatedSsoDocViews: { type: number }
+        pricingViewsWithoutActivation: { type: number }
+        integrationErrorsThenInactivity: { type: number }
+        returningAfterInactivity: { type: number }
+        subscriptionStart: { type: number }
+
+    MessagingGuidance:
+      type: object
+      description: Recommended outreach angle guidance keyed by archetype
+      additionalProperties:
+        type: string
+
+    GrowthHypothesis:
+      type: object
+      required:
+        - id
+        - version
+        - title
+        - description
+        - signalWeights
+        - messagingGuidance
+        - knownLimitations
+        - effectiveAt
+        - updatedAt
+      properties:
+        id: { type: integer }
+        version: { type: string }
+        title: { type: string }
+        description: { type: string }
+        signalWeights:
+          $ref: "#/components/schemas/SignalWeights"
+        messagingGuidance:
+          $ref: "#/components/schemas/MessagingGuidance"
+        knownLimitations: { type: string }
+        effectiveAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    GrowthHypothesisInput:
+      type: object
+      required: [title, description, signalWeights, messagingGuidance, knownLimitations]
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        signalWeights:
+          $ref: "#/components/schemas/SignalWeights"
+        messagingGuidance:
+          $ref: "#/components/schemas/MessagingGuidance"
+        knownLimitations: { type: string }
+
+    AssessmentScoreChange:
+      type: object
+      required:
+        - personId
+        - personName
+        - companyName
+        - previousPriority
+        - newPriority
+        - previousOutreachPriority
+        - newOutreachPriority
+      properties:
+        personId: { type: integer }
+        personName: { type: string }
+        companyName: { type: string }
+        previousPriority: { type: number }
+        newPriority: { type: number }
+        previousOutreachPriority:
+          $ref: "#/components/schemas/OutreachPriority"
+        newOutreachPriority:
+          $ref: "#/components/schemas/OutreachPriority"
+
+    RecalculationResult:
+      type: object
+      required: [hypothesisVersion, updatedAssessmentsCount, changes]
+      properties:
+        hypothesisVersion: { type: string }
+        updatedAssessmentsCount: { type: integer }
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssessmentScoreChange"
+
+    GrowthHypothesisSaveResult:
+      type: object
+      required: [hypothesis, recalculation]
+      properties:
+        hypothesis:
+          $ref: "#/components/schemas/GrowthHypothesis"
+        recalculation:
+          $ref: "#/components/schemas/RecalculationResult"
+
+    ResearchAssessment:
+      type: object
+      required:
+        - id
+        - personId
+        - companyId
+        - hypothesisVersion
+        - icpFitScore
+        - personaFitScore
+        - activationScore
+        - collaborationScore
+        - enterpriseIntentScore
+        - purchaseIntentScore
+        - churnRiskScore
+        - outreachPriority
+        - recommendedAngle
+        - rationale
+        - riskNotes
+        - generatedAt
+      properties:
+        id: { type: integer }
+        personId: { type: integer }
+        companyId: { type: integer }
+        hypothesisVersion: { type: string }
+        icpFitScore: { type: number }
+        personaFitScore: { type: number }
+        activationScore: { type: number }
+        collaborationScore: { type: number }
+        enterpriseIntentScore: { type: number }
+        purchaseIntentScore: { type: number }
+        churnRiskScore: { type: number }
+        outreachPriority:
+          $ref: "#/components/schemas/OutreachPriority"
+        recommendedAngle: { type: string }
+        rationale: { type: string }
+        riskNotes: { type: string }
+        generatedAt: { type: string, format: date-time }
+
+    ProspectListItem:
+      type: object
+      required:
+        - personId
+        - firstName
+        - lastName
+        - title
+        - companyId
+        - companyName
+        - archetype
+        - icpFitScore
+        - activationScore
+        - enterpriseIntentScore
+        - churnRiskScore
+        - outreachPriority
+        - outreachStatus
+      properties:
+        personId: { type: integer }
+        firstName: { type: string }
+        lastName: { type: string }
+        title: { type: string }
+        department: { type: string }
+        companyId: { type: integer }
+        companyName: { type: string }
+        archetype:
+          $ref: "#/components/schemas/Archetype"
+        icpFitScore: { type: number }
+        activationScore: { type: number }
+        enterpriseIntentScore: { type: number }
+        churnRiskScore: { type: number }
+        outreachPriority:
+          $ref: "#/components/schemas/OutreachPriority"
+        outreachStatus:
+          type: ["string", "null"]
+
+    ProspectDetail:
+      type: object
+      required:
+        - person
+        - company
+        - events
+        - behavioralTrail
+        - researchAssessment
+        - outreachPackage
+      properties:
+        person:
+          $ref: "#/components/schemas/Person"
+        company:
+          $ref: "#/components/schemas/Company"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductEvent"
+        behavioralTrail:
+          $ref: "#/components/schemas/BehavioralTrail"
+        researchAssessment:
+          $ref: "#/components/schemas/ResearchAssessment"
+        outreachPackage:
+          oneOf:
+            - $ref: "#/components/schemas/OutreachPackage"
+            - type: "null"
+
+    OutreachPackage:
+      type: object
+      required:
+        - id
+        - personId
+        - companyId
+        - campaign
+        - sourceSignal
+        - behavioralTrail
+        - behaviorSummary
+        - researchSummary
+        - outreachAngle
+        - hypothesisVersion
+        - promptVersion
+        - status
+        - exportedToAttio
+        - createdAt
+      properties:
+        id: { type: integer }
+        personId: { type: integer }
+        companyId: { type: integer }
+        campaign: { type: string }
+        sourceSignal: { type: string }
+        behavioralTrail:
+          type: array
+          items: { type: string }
+        behaviorSummary: { type: string }
+        researchSummary: { type: string }
+        outreachAngle: { type: string }
+        hypothesisVersion: { type: string }
+        promptVersion: { type: string }
+        status:
+          $ref: "#/components/schemas/OutreachStatus"
+        exportedToAttio: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    OutreachPackageListItem:
+      type: object
+      required:
+        - id
+        - personId
+        - personName
+        - companyId
+        - companyName
+        - sourceSignal
+        - outreachPriority
+        - outreachAngle
+        - status
+        - createdAt
+      properties:
+        id: { type: integer }
+        personId: { type: integer }
+        personName: { type: string }
+        companyId: { type: integer }
+        companyName: { type: string }
+        sourceSignal: { type: string }
+        outreachPriority:
+          $ref: "#/components/schemas/OutreachPriority"
+        outreachAngle: { type: string }
+        status:
+          $ref: "#/components/schemas/OutreachStatus"
+        createdAt: { type: string, format: date-time }
+
+    OutreachPackageInput:
+      type: object
+      required: [personId]
+      properties:
+        personId: { type: integer }
+        campaign: { type: string }
+
+    OutreachPackageUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/OutreachStatus"
+
+    AttioCompanyPayload:
+      type: object
+      required: [objectSlug, values]
+      properties:
+        objectSlug: { type: string }
+        values:
+          type: object
+          additionalProperties: true
+
+    AttioPersonPayload:
+      type: object
+      required: [objectSlug, values]
+      properties:
+        objectSlug: { type: string }
+        values:
+          type: object
+          additionalProperties: true
+
+    AttioEmailPayload:
+      type: object
+      required: [objectSlug, values]
+      properties:
+        objectSlug: { type: string }
+        values:
+          type: object
+          additionalProperties: true
+
+    AttioExportPreview:
+      type: object
+      required: [company, person, email]
+      properties:
+        company:
+          $ref: "#/components/schemas/AttioCompanyPayload"
+        person:
+          $ref: "#/components/schemas/AttioPersonPayload"
+        email:
+          $ref: "#/components/schemas/AttioEmailPayload"
+
+    DashboardSummary:
+      type: object
+      required:
+        - companies
+        - people
+        - totalEvents
+        - activatedAccounts
+        - highPriorityProspects
+        - enterpriseEvaluators
+        - atRiskImplementers
+        - convertedAccounts
+        - currentHypothesisVersion
+      properties:
+        companies: { type: integer }
+        people: { type: integer }
+        totalEvents: { type: integer }
+        activatedAccounts: { type: integer }
+        highPriorityProspects: { type: integer }
+        enterpriseEvaluators: { type: integer }
+        atRiskImplementers: { type: integer }
+        convertedAccounts: { type: integer }
+        currentHypothesisVersion: { type: string }
+
+    GenerateProspectInput:
+      type: object
+      required: [archetype]
+      properties:
+        archetype:
+          $ref: "#/components/schemas/Archetype"
+
+    GenerateBatchInput:
+      type: object
+      properties:
+        count:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+
+    GenerateBatchResult:
+      type: object
+      required: [generated, prospects]
+      properties:
+        generated: { type: integer }
+        prospects:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProspectListItem"
+
+    SimulateDaysInput:
+      type: object
+      properties:
+        days:
+          type: integer
+          minimum: 1
+          maximum: 30
+          default: 7
+
+    SimulateDaysResult:
+      type: object
+      required: [eventsAdded, daysSimulated, trailsUpdated]
+      properties:
+        eventsAdded: { type: integer }
+        daysSimulated: { type: integer }
+        trailsUpdated: { type: integer }
