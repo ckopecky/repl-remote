@@ -63,7 +63,7 @@ shown in the nav at all times.
 
 ## User preferences
 
-_None recorded yet._
+- Production database holds only synthetic/disposable GTM seed data — it's safe to check "Set up your production database with your current development data" (overwrite) in the Publish UI whenever a publish reports a schema conflict. There is no persistent "always drop tables" setting; this is a manual per-publish choice.
 
 ## Gotchas
 
