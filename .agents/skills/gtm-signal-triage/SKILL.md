@@ -28,6 +28,26 @@ Every answer is useful. Curiosity about their build is the product. The email is
 
 ---
 
+## ⚠️ Replit Workspace Note: Synthetic Data Stand-In
+
+This workspace does not have a live PostHog connection. Wherever this skill says "PostHog" —
+the resume check's session state aside — treat the **Synthetic GTM Signal Engine** artifact
+(`artifacts/gtm-signal-engine`, faker.js-generated companies/people/product-events) as the
+stand-in data source for Step 1 (PostHog check) and the "Before Any Query: PostHog Project"
+switch-project step. Query its API/data instead of calling PostHog MCP tools; the event
+vocabulary, cohort definitions, and classification logic in this skill still apply — map the
+synthetic engine's event names to the PostHog event names in the tables above as closely as
+their meaning matches, and note in `research_notes` when a mapping is approximate.
+
+**Attio writes are real, not synthetic.** This workspace has a live Attio connection
+(`ATTIO_API_KEY`) — Steps 3–5 (Company/Person/GTM Signal records, briefs, emails) still write to
+the actual Attio workspace exactly as written below. Do not simulate or skip these writes because
+the upstream signal data is synthetic; only the PostHog data source is a stand-in, everything
+downstream of it runs for real. Flag synthetic-sourced records as such in `research_notes` (e.g.
+`SOURCE: synthetic GTM Signal Engine`) so they're distinguishable from real-pipeline runs later.
+
+---
+
 ## Entry Points
 
 ### Mode A — Batch (list-first)
