@@ -188,6 +188,8 @@ No softening. End triage notes with `Confidence: NN/100 — [one-line reason]`.
 
 See `references/attio-schema.md` for full slugs, types, and write guidance.
 
+NOTE: If you are using faker.js records, please make sure to upsert `synthetic_data: true` on all records you write to attio that you can. 
+
 1. **Company:** search by domain → name. Match → use it. No match → create.
 2. **Person:** search by email → name. Match → use it. No match → create.
 3. **GTM Signal record:**
@@ -214,7 +216,7 @@ Write `signal_summary`:
 Why now: [the moment — funding, launch, event history inflection]
 PostHog story: [plain-language interpretation of the trail]
 Auth angle: [the specific auth problem shaping up]
-Verdict: Reach out now — [the one true, timely, specific hook]
+Verdict: Reach out now? — [the one true, timely, specific hook]
 ```
 
 **Auth Problem Angle:** write to `auth_problem_angle_6` using existing option titles only —
@@ -267,14 +269,11 @@ Create `generative_ai_emails` record with these fields:
 - `body` — required. Plain text, no markdown, no HTML. End with sender first name + email as above.
 - `agent_confidence` — required. Exactly one of: `low` / `medium` / `high`
 - `outreach_tier` — required. Exactly one of: `low` / `medium` / `high`. Derived in Step 4.
-- `sender_email` — required. The sender's email address from the round-robin (e.g. `christina@clerk.dev`).
 - `gtm_signal_person` — reference to the GTM Signal record created in Step 3
-
-`sender` (the legacy field) is not required — omit it.
 
 Only create for Reach Out Now verdicts with final drafts.
 
-**After creating the email record**, add the Person to the `Growth Campaign - H2 F27` list
+**After creating the email record**, add the Person to the `H2 F26 Growth Outreach - Funded Founders` list
 and assign the sender as contact owner:
 
 ```
