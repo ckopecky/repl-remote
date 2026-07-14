@@ -146,7 +146,14 @@ router.post("/outreach-packages", async (req, res): Promise<void> => {
   }
 
   const generated = await runGeneration(outreachPackage.id);
-  res.status(201).json(CreateOutreachPackageResponse.parse(generated));
+
+  // Push to the connected Attio workspace as soon as the package exists --
+  // every prospect that enters a campaign gets a Company/Person/Note record
+  // regardless of what happens to the package afterward (Sent, Rejected,
+  // Paused, etc.). This matches the real pipeline's rule: every person,
+  // every verdict gets written to Attio.
+  const synced = await runAttioSync(generated.id);
+  res.status(201).json(CreateOutreachPackageResponse.parse(synced));
 });
 
 router.get("/outreach-packages/:id", async (req, res): Promise<void> => {
