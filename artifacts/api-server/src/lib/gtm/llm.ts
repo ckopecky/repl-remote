@@ -150,9 +150,10 @@ export async function generateOutreachContent(input: {
   const userPrompt = `
 Prospect company: ${company.name} (${company.domain})
 - Industry: ${company.industry.join(", ")}
-- Employees: ${company.employeeCount} (${company.employeeRange.join(", ")})
+- Employees: ${company.employeeCount} (${company.employeeRange})
 - Product category: ${company.productCategory.join(", ")}
-- Funding raised through: ${company.fundingStage.join(" -> ")} (currently ${company.fundingStage[company.fundingStage.length - 1] ?? "Unknown"})
+- Funding stage: ${company.fundingStage}
+- Technology context: ${company.technologyContext.join(", ")}
 - Growth signal: ${company.growthSignal}
 - Company ICP fit score (0-100, higher = better fit): ${company.icpFitScore}
 

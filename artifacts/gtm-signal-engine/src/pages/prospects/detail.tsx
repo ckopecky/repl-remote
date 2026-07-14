@@ -265,17 +265,20 @@ export default function ProspectDetail() {
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Employees</div>
                   <div className="text-sm font-medium">{company.employeeCount.toLocaleString()}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{company.employeeRange.join(", ")}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{company.employeeRange}</div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Funding</div>
-                  <div className="text-sm font-medium">{company.fundingStage[company.fundingStage.length - 1]}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">via {company.fundingStage.join(" → ")}</div>
+                  <div className="text-sm font-medium">{company.fundingStage}</div>
                 </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Tech Context</div>
-                <div className="text-sm">{company.technologyContext}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {company.technologyContext.map((t) => (
+                    <Badge key={t} variant="secondary" className="font-normal">{t}</Badge>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

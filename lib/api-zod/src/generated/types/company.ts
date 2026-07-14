@@ -12,8 +12,8 @@ export interface Company {
   domain: string;
   industry: string[];
   employeeCount: number;
-  employeeRange: string[];
-  fundingStage: string[];
+  employeeRange: string;
+  fundingStage: string;
   /** @nullable */
   latestFundingDate: Date | null;
   /** @nullable */
@@ -21,7 +21,7 @@ export interface Company {
   /** @nullable */
   headquarters: string | null;
   productCategory: string[];
-  technologyContext: string;
+  technologyContext: string[];
   growthSignal: string;
   icpFitScore: number;
   createdAt: Date;

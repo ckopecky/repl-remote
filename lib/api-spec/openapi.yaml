@@ -565,13 +565,13 @@ components:
         domain: { type: string }
         industry: { type: array, items: { type: string } }
         employeeCount: { type: integer }
-        employeeRange: { type: array, items: { type: string } }
-        fundingStage: { type: array, items: { type: string } }
+        employeeRange: { type: string }
+        fundingStage: { type: string }
         latestFundingDate: { type: ["string", "null"], format: date }
         fundingAmount: { type: ["integer", "null"] }
         headquarters: { type: ["string", "null"] }
         productCategory: { type: array, items: { type: string } }
-        technologyContext: { type: string }
+        technologyContext: { type: array, items: { type: string } }
         growthSignal: { type: string }
         icpFitScore: { type: number }
         createdAt: { type: string, format: date-time }

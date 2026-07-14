@@ -103,18 +103,12 @@ const EMPLOYEE_RANGE_BUCKETS: { label: string; min: number; max: number }[] = [
   { label: "5000+", min: 5001, max: Infinity },
 ];
 
-/** Maps a raw employee count to the standard headcount bucket(s) it falls into. */
-function employeeRangeFor(count: number): string[] {
+/** Maps a raw employee count to the standard headcount bucket it falls into. */
+function employeeRangeFor(count: number): string {
   const bucket =
     EMPLOYEE_RANGE_BUCKETS.find((b) => count >= b.min && count <= b.max) ??
     EMPLOYEE_RANGE_BUCKETS[EMPLOYEE_RANGE_BUCKETS.length - 1]!;
-  return [bucket.label];
-}
-
-/** Returns the funding stages a company has raised through, in order, up to and including `currentStage`. */
-function fundingStageHistory(currentStage: string): string[] {
-  const idx = FUNDING_STAGES.indexOf(currentStage);
-  return idx === -1 ? [currentStage] : FUNDING_STAGES.slice(0, idx + 1);
+  return bucket.label;
 }
 
 function hoursAfter(base: Date, hours: number): Date {
@@ -123,6 +117,68 @@ function hoursAfter(base: Date, hours: number): Date {
 
 function daysAfter(base: Date, days: number): Date {
   return hoursAfter(base, days * 24);
+}
+
+type EventSource = "web_app" | "mobile_app" | "api" | "cli";
+
+interface SourceProfile {
+  primary: EventSource;
+  secondary: EventSource[];
+}
+
+/** Each archetype has a characteristic mix of surfaces it interacts through (e.g. solo builders live in the CLI, enterprise evaluators live in the web app). */
+function buildSourceProfile(archetype: Archetype): SourceProfile {
+  switch (archetype) {
+    case "rapid_team_activator":
+      return { primary: "web_app", secondary: ["cli"] };
+    case "enterprise_evaluator":
+      return { primary: "web_app", secondary: ["api"] };
+    case "solo_builder":
+      return { primary: "cli", secondary: ["web_app"] };
+    case "stalled_implementer":
+      return { primary: "cli", secondary: ["web_app", "api"] };
+    case "returning_evaluator":
+      return { primary: "web_app", secondary: ["cli"] };
+    case "converted_account":
+      return { primary: "web_app", secondary: ["api"] };
+  }
+}
+
+function pickAllowedSource(profile: SourceProfile, allowed: EventSource[]): EventSource {
+  const candidates = [profile.primary, ...profile.secondary].filter((source) =>
+    allowed.includes(source),
+  );
+  return candidates.length > 0 ? pick(candidates) : allowed[0]!;
+}
+
+/** Maps an event to the surface(s) it could plausibly be triggered from, weighted toward the person's source profile. */
+function sourceForEvent(eventName: ProductEventName, profile: SourceProfile): EventSource {
+  switch (eventName) {
+    case "pricing_page_viewed":
+    case "enterprise_page_viewed":
+    case "documentation_viewed":
+    case "sso_documentation_viewed":
+    case "checkout_started":
+    case "subscription_started":
+    case "mfa_enabled":
+      return "web_app";
+
+    case "api_key_created":
+    case "application_created":
+    case "application_configured":
+    case "integration_error":
+      return pickAllowedSource(profile, ["web_app", "cli", "api"]);
+
+    case "user_signed_up":
+    case "organization_enabled":
+    case "teammate_invited":
+    case "returned_to_product":
+    case "inactive_period":
+      return profile.primary;
+
+    default:
+      return profile.primary;
+  }
 }
 
 export function generateCompany(): InsertCompany {
@@ -147,7 +203,7 @@ export function generateCompany(): InsertCompany {
     industry: pickMany(INDUSTRIES, 1, 2),
     employeeCount,
     employeeRange: employeeRangeFor(employeeCount),
-    fundingStage: fundingStageHistory(fundingStage),
+    fundingStage,
     latestFundingDate: hasFunding
       ? faker.date.past({ years: 2 }).toISOString().slice(0, 10)
       : null,
@@ -156,11 +212,10 @@ export function generateCompany(): InsertCompany {
       : null,
     headquarters: `${faker.location.city()}, ${faker.location.countryCode()}`,
     productCategory: pickMany(PRODUCT_CATEGORIES, 1, 2),
-    technologyContext: `${pick(["React", "Vue", "Django", "Rails", "Go", "Java/Spring"])} stack, ${pick([
-      "AWS",
-      "GCP",
-      "Azure",
-    ])}-hosted`,
+    technologyContext: [
+      pick(["React", "Vue", "Django", "Rails", "Go", "Java/Spring"]),
+      pick(["AWS", "GCP", "Azure"]),
+    ],
     growthSignal: pick([
       "Recently raised funding",
       "Hiring surge in engineering",
@@ -216,12 +271,13 @@ function ev(
   eventName: ProductEventName,
   occurredAt: Date,
   sessionId: string,
+  profile: SourceProfile,
   properties: Record<string, unknown> = {},
 ): GeneratedEvent {
   return {
     eventName,
     occurredAt,
-    source: pick(["web_app", "mobile_app", "api", "cli"]),
+    source: sourceForEvent(eventName, profile),
     properties: { sessionId, ...properties },
   };
 }
@@ -229,6 +285,7 @@ function ev(
 /**
  * Generates a realistic, weighted event sequence for a given archetype, anchored on signupDate.
  * All timestamps are derived deterministically relative to signupDate using the seeded faker RNG.
+ * Event sources (web app / CLI / API) are drawn from the archetype's characteristic source profile.
  */
 export function generateEventSequence(
   archetype: Archetype,
@@ -236,40 +293,46 @@ export function generateEventSequence(
   now: Date,
 ): GeneratedEvent[] {
   const events: GeneratedEvent[] = [];
+  const profile = buildSourceProfile(archetype);
   const session = () => faker.string.uuid();
 
-  events.push(ev("user_signed_up", signupDate, session()));
+  events.push(ev("user_signed_up", signupDate, session(), profile));
 
   switch (archetype) {
     case "rapid_team_activator": {
       const appAt = hoursAfter(signupDate, faker.number.float({ min: 0.2, max: 20 }));
-      events.push(ev("application_created", appAt, session()));
+      events.push(ev("application_created", appAt, session(), profile));
       events.push(
-        ev("application_configured", hoursAfter(appAt, faker.number.int({ min: 1, max: 6 })), session()),
+        ev(
+          "application_configured",
+          hoursAfter(appAt, faker.number.int({ min: 1, max: 6 })),
+          session(),
+          profile,
+        ),
       );
       const orgAt = hoursAfter(appAt, faker.number.int({ min: 2, max: 12 }));
-      events.push(ev("organization_enabled", orgAt, session()));
+      events.push(ev("organization_enabled", orgAt, session(), profile));
       const inviteCount = faker.number.int({ min: 3, max: 9 });
       events.push(
-        ev("teammate_invited", hoursAfter(orgAt, 1), session(), { count: inviteCount }),
+        ev("teammate_invited", hoursAfter(orgAt, 1), session(), profile, { count: inviteCount }),
       );
-      events.push(ev("sdk_installed", daysAfter(signupDate, 1), session()));
-      events.push(ev("api_key_created", daysAfter(signupDate, 1), session()));
+      events.push(ev("sdk_installed", daysAfter(signupDate, 1), session(), profile));
+      events.push(ev("api_key_created", daysAfter(signupDate, 1), session(), profile));
       const returnDays = faker.helpers.arrayElement([2, 3, 5, 7, 9, 12]);
       for (const d of [returnDays, returnDays + 3, returnDays + 7]) {
         if (daysAfter(signupDate, d) < now) {
-          events.push(ev("documentation_viewed", daysAfter(signupDate, d), session()));
+          events.push(ev("documentation_viewed", daysAfter(signupDate, d), session(), profile));
         }
       }
       break;
     }
     case "enterprise_evaluator": {
       const appAt = daysAfter(signupDate, faker.number.float({ min: 0.5, max: 3 }));
-      events.push(ev("application_created", appAt, session()));
+      events.push(ev("application_created", appAt, session(), profile));
       const orgAt = daysAfter(appAt, faker.number.int({ min: 1, max: 3 }));
-      events.push(ev("organization_enabled", orgAt, session()));
+      events.push(ev("organization_enabled", orgAt, session(), profile));
       events.push(
-        ev("teammate_invited", hoursAfter(orgAt, 4), session(), {
+        ev("teammate_invited", hoursAfter(orgAt, 4), session(), profile, {
           count: faker.number.int({ min: 1, max: 3 }),
         }),
       );
@@ -278,42 +341,46 @@ export function generateEventSequence(
       for (let i = 0; i < ssoViews; i++) {
         cursor = daysAfter(cursor, faker.number.int({ min: 1, max: 4 }));
         if (cursor >= now) break;
-        events.push(ev("sso_documentation_viewed", cursor, session()));
+        events.push(ev("sso_documentation_viewed", cursor, session(), profile));
       }
-      events.push(ev("enterprise_page_viewed", daysAfter(signupDate, 4), session()));
-      events.push(ev("pricing_page_viewed", daysAfter(signupDate, 5), session()));
-      events.push(ev("mfa_enabled", daysAfter(signupDate, 6), session()));
+      events.push(ev("enterprise_page_viewed", daysAfter(signupDate, 4), session(), profile));
+      events.push(ev("pricing_page_viewed", daysAfter(signupDate, 5), session(), profile));
+      events.push(ev("mfa_enabled", daysAfter(signupDate, 6), session(), profile));
       break;
     }
     case "solo_builder": {
       const appAt = daysAfter(signupDate, faker.number.float({ min: 0.1, max: 2 }));
-      events.push(ev("application_created", appAt, session()));
-      events.push(ev("api_key_created", hoursAfter(appAt, faker.number.int({ min: 1, max: 5 })), session()));
-      events.push(ev("sdk_installed", hoursAfter(appAt, faker.number.int({ min: 2, max: 10 })), session()));
+      events.push(ev("application_created", appAt, session(), profile));
+      events.push(
+        ev("api_key_created", hoursAfter(appAt, faker.number.int({ min: 1, max: 5 })), session(), profile),
+      );
+      events.push(
+        ev("sdk_installed", hoursAfter(appAt, faker.number.int({ min: 2, max: 10 })), session(), profile),
+      );
       const docViews = faker.number.int({ min: 0, max: 3 });
       let cursor = appAt;
       for (let i = 0; i < docViews; i++) {
         cursor = daysAfter(cursor, faker.number.int({ min: 1, max: 5 }));
         if (cursor >= now) break;
-        events.push(ev("documentation_viewed", cursor, session()));
+        events.push(ev("documentation_viewed", cursor, session(), profile));
       }
       break;
     }
     case "stalled_implementer": {
       const appAt = daysAfter(signupDate, faker.number.float({ min: 0.5, max: 2 }));
-      events.push(ev("application_created", appAt, session()));
+      events.push(ev("application_created", appAt, session(), profile));
       const errorCount = faker.number.int({ min: 2, max: 5 });
       let cursor = appAt;
       for (let i = 0; i < errorCount; i++) {
         cursor = hoursAfter(cursor, faker.number.int({ min: 2, max: 30 }));
         if (cursor >= now) break;
-        events.push(ev("integration_error", cursor, session()));
-        events.push(ev("documentation_viewed", hoursAfter(cursor, 1), session()));
+        events.push(ev("integration_error", cursor, session(), profile));
+        events.push(ev("documentation_viewed", hoursAfter(cursor, 1), session(), profile));
       }
       const inactiveStart = daysAfter(appAt, faker.number.int({ min: 3, max: 6 }));
       if (inactiveStart < now) {
         events.push(
-          ev("inactive_period", inactiveStart, session(), {
+          ev("inactive_period", inactiveStart, session(), profile, {
             durationDays: faker.number.int({ min: 10, max: 40 }),
           }),
         );
@@ -323,37 +390,37 @@ export function generateEventSequence(
     case "returning_evaluator": {
       const inactiveStart = daysAfter(signupDate, faker.number.int({ min: 1, max: 4 }));
       events.push(
-        ev("inactive_period", inactiveStart, session(), {
+        ev("inactive_period", inactiveStart, session(), profile, {
           durationDays: faker.number.int({ min: 20, max: 60 }),
         }),
       );
       const returnAt = daysAfter(inactiveStart, faker.number.int({ min: 25, max: 65 }));
       if (returnAt < now) {
-        events.push(ev("returned_to_product", returnAt, session()));
-        events.push(ev("application_configured", hoursAfter(returnAt, 2), session()));
-        events.push(ev("pricing_page_viewed", daysAfter(returnAt, 1), session()));
-        events.push(ev("sso_documentation_viewed", daysAfter(returnAt, 2), session()));
+        events.push(ev("returned_to_product", returnAt, session(), profile));
+        events.push(ev("application_configured", hoursAfter(returnAt, 2), session(), profile));
+        events.push(ev("pricing_page_viewed", daysAfter(returnAt, 1), session(), profile));
+        events.push(ev("sso_documentation_viewed", daysAfter(returnAt, 2), session(), profile));
       }
       break;
     }
     case "converted_account": {
       const appAt = hoursAfter(signupDate, faker.number.float({ min: 1, max: 18 }));
-      events.push(ev("application_created", appAt, session()));
+      events.push(ev("application_created", appAt, session(), profile));
       const orgAt = hoursAfter(appAt, faker.number.int({ min: 2, max: 10 }));
-      events.push(ev("organization_enabled", orgAt, session()));
+      events.push(ev("organization_enabled", orgAt, session(), profile));
       events.push(
-        ev("teammate_invited", hoursAfter(orgAt, 3), session(), {
+        ev("teammate_invited", hoursAfter(orgAt, 3), session(), profile, {
           count: faker.number.int({ min: 2, max: 6 }),
         }),
       );
-      events.push(ev("enterprise_page_viewed", daysAfter(signupDate, 3), session()));
-      events.push(ev("pricing_page_viewed", daysAfter(signupDate, 4), session()));
-      events.push(ev("checkout_started", daysAfter(signupDate, 5), session()));
+      events.push(ev("enterprise_page_viewed", daysAfter(signupDate, 3), session(), profile));
+      events.push(ev("pricing_page_viewed", daysAfter(signupDate, 4), session(), profile));
+      events.push(ev("checkout_started", daysAfter(signupDate, 5), session(), profile));
       const subAt = daysAfter(signupDate, faker.number.int({ min: 5, max: 8 }));
       if (subAt < now) {
-        events.push(ev("subscription_started", subAt, session()));
+        events.push(ev("subscription_started", subAt, session(), profile));
       }
-      events.push(ev("mfa_enabled", daysAfter(signupDate, 9), session()));
+      events.push(ev("mfa_enabled", daysAfter(signupDate, 9), session(), profile));
       break;
     }
   }

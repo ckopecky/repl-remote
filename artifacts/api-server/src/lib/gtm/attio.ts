@@ -81,12 +81,10 @@ export interface AttioSyncFailure {
 
 export type AttioSyncResult = AttioSyncSuccess | AttioSyncFailure;
 
-/** Formats a company's now-multi-valued industry/funding/headcount fields into one readable line. */
+/** Formats a company's multi-valued industry/product fields into one readable line. */
 function buildCompanyDescription(company: Company): string {
   const industry = company.industry.join(", ");
-  const currentFundingStage = company.fundingStage[company.fundingStage.length - 1] ?? "Unknown";
-  const employeeRange = company.employeeRange.join(", ");
-  return `${industry} · ${company.employeeCount} employees (${employeeRange}) · ${currentFundingStage}. ${company.growthSignal}.`;
+  return `${industry} · ${company.employeeCount} employees (${company.employeeRange}) · ${company.fundingStage}. ${company.growthSignal}.`;
 }
 
 function buildNoteContent(outreachPackage: OutreachPackage): string {
