@@ -1,5 +1,6 @@
 import type { Company, OutreachPackage, Person } from "@workspace/db";
 import { AttioApiError, createAttioNote, upsertAttioRecord } from "./attioClient";
+import { logger } from "../logger";
 
 export interface AttioRecordPayload {
   objectSlug: string;
@@ -32,7 +33,7 @@ export function buildAttioExportPreview(input: {
   outreachPackage: OutreachPackage;
 }): AttioExportPreview {
   const { company, person, outreachPackage } = input;
-
+  
   const companyPayload: AttioRecordPayload = {
     objectSlug: "companies",
     values: {

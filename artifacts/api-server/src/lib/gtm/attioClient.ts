@@ -1,6 +1,7 @@
 import { logger } from "../logger";
-
 const ATTIO_API_BASE = "https://api.attio.com/v2";
+
+const ATTIO_WORKFLOW_WEBHOOK_BASE = "https://hooks.attio.com/w";
 
 export class AttioApiError extends Error {
   constructor(
@@ -13,13 +14,35 @@ export class AttioApiError extends Error {
   }
 }
 
-function getApiKey(): string {
+export function getApiKey(): string {
   const key = process.env.ATTIO_API_KEY;
   if (!key) {
     throw new Error("ATTIO_API_KEY is not configured");
   }
   return key;
 }
+
+
+function getWorkflowId(whichObj: string): string {
+  const workflowId = `process.env.ATTIO_${whichObj}_WORKFLOW_ID`;
+  if (!whichObj) {
+    throw new Error("need to specify which object has the workflow Id")
+  }
+  if (!workflowId) {
+    throw new Error(`$ATTIO_${whichObj}_WORKFLOW_ID is not configured`);
+  } 
+  return workflowId;
+}
+
+const PEOPLE_WORKFLOW_ID: string = process.env.PEOPLE_WORKFLOW_ENDPOINT = `${ATTIO_WORKFLOW_WEBHOOK_BASE}/${getWorkflowId("PEOPLE")}`
+
+const COMPANIES_WORKFLOW_ID: string = process.env.COMPANIES_WORKFLOW_ENDPOINT = `${ATTIO_WORKFLOW_WEBHOOK_BASE}/${getWorkflowId("COMPANIES")}`
+
+const GENERATIVE_OUTREACH_WORKFLOW_ID: string = process.env.GENERATIVE_OUTREACH_WORKFLOW_ENDPOINT = `${ATTIO_WORKFLOW_WEBHOOK_BASE}/${getWorkflowId("GENERATIVE_OUTREACH")}`
+
+const LIST_ID_WORKFLOW_ID: string = process.env.GTM_SIGNALS_LIST_ID = `${ATTIO_WORKFLOW_WEBHOOK_BASE}/${getWorkflowId("LIST_ID")}`;
+
+const GTM_SIGNALS_WORKFLOW_ID: string = process.env.GTM_SIGNALS_WORKFLOW_ENDPOINT = `${ATTIO_WORKFLOW_WEBHOOK_BASE}/${getWorkflowId("GTM_SIGNALS")}`
 
 async function attioRequest<T>(
   path: string,
@@ -47,6 +70,111 @@ async function attioRequest<T>(
 
   return json as T;
 }
+
+// Branded ID types for Attio record references
+type _Brand<T extends string> = { readonly __brand: T };
+export type CompanyId = string & _Brand<"CompanyId">;
+export type PeopleId = string & _Brand<"PeopleId">;
+export type ListId = string & _Brand<"ListId">;
+export type GTMSignalId = string & _Brand<"GTMSignalId">;
+export type GenerativeEmailId = string & _Brand<"GenerativeEmailId">;
+
+export interface AttioPeopleObject {
+  first_name: string;
+  last_name: string;
+  name: string;
+  email_addresses: string[];
+  job_title: string;
+  company: CompanyId[];
+  department: "engineering" | "product" | "design" | "GTM" | "executive" | "founder"| "other";
+  activation_score: number;
+  behavior_archetype: string;
+  behavior_summary: string;
+  behavior_trail: string[];
+  collaboration_score: number;
+  description: string;
+  enterprise_intent_score: number;
+  customer_status: "signup" | "activated" | "evaluating" |"converted" | "churned"; 
+  persona: "technical implementer" | "product strategist" | "data practitioner" | "design practitioner" | "ops generalist" | "growth marketer" | "revops analyst" | "IT administrator" | "sales leader" | "executive sponsor";
+primary_location: {
+    city: string;
+    state: string
+    country: string;
+}
+seniority: 
+  "executive" | "VP" |"director" | "manager" |"senior individual contributor" | "associate individual contributor";
+purchase_role: "decision maker" | "champion" | "technical evaluator" | "end user" | "influencer" | "procurement specialist";
+signup_date: string;
+synthethic_demo_record: boolean;
+churn_risk_score: number;
+persona_fit_score: number;
+
+}
+
+export interface AttioCompaniesObject {
+  domains: string[];
+  name: string;
+  description: string;
+  employee_count: number;
+  employee_range: "1-10" | "11-50" | "51-200" | "201-500" | "501-1000" | "1001-5000" | "5K-10K" | "10K-50K" | "50K-100K" | "100K+";
+  funding_stage: "bootstrapped" | "seed" | "series A" | "series B" | "series C" | "series D" | "public";
+  funding_raised: number;
+  primary_location: {
+    city: string;
+    state: string;
+    country: string;
+  };
+  industry_vertical: "software as a service" | " information technology" | "infrastructure as a service" | "retail" | "manufacturing" | "other technology" | "financial services" | "healthcare" | "education" | "non-profit";
+  product_category: "developer tools" | "AI" | "SaaS" | "IaaS" | "PaaS" | "data" | "workflow automation" | "identity and access" | "payments" | "observability" | "other";
+  technology_context: string[];
+  synthethic_demo_record: boolean;
+  icp_fit_score: number;
+  icp_tier: "tier 1" | "tier 2" | "tier 3" | 
+  "not ICP";
+  growth_signal: string
+  primary_signal: "rapid activation" | "team expansion" |"enterprise research" | "SSO research" | "pricing activity" | "implementation blocker" | "returning after inactivity" |"conversion" | "churn risk";
+  team: PeopleId[];
+  outreach_priority: "high" | "medium" | "low" | "suppress";
+  strongest_connection: {
+    person: PeopleId;
+    persona_fit_score: number
+  } //v.2
+  estimated_arr: number;
+  first_calendar_interaction: string;
+  last_calendar_interaction: string;
+  first_outreach_interaction: string;
+  last_outreach_interaction: string;
+  gtm_signal: GTMSignalId[];
+  
+}
+
+export interface AttioGTMSignalObject {
+  list_entries: ListId[];
+  company: CompanyId;
+  person: PeopleId;
+  behavior_flow: string[];
+  signal_date: string;
+  batch: string;
+  gtm_signal_title: string;
+  generative_ai_emails: GenerativeEmailId[];
+}
+
+export interface AttioGenerativeEmailObject {
+  current_sender_index: 0 | 1 | 2;
+  subject: string;
+  body: string;
+  agent_confidence: "low" | "medium" |"high";
+  gtm_signals: GTMSignalId[];
+  current_person_ref: PeopleId;
+  current_company_ref: CompanyId;
+  "synthetic_data?": boolean;
+  outreach_status: "not started" | "thinking" | "approval needed" | "email done" | "needs regeneration" | "calendar booked" | "meeting done" | "converted";
+}
+
+
+
+
+
 
 export interface AttioRecordRef {
   workspace_id: string;

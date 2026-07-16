@@ -6,7 +6,7 @@ deploymentTarget = "autoscale"
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
-env = { "CI" = "true" }
+env = { "CI" = "true", "ATTIO_PEOPLE_WORKFLOW_ID" = "ca27df7c-ad7a-4250-a552-c29a153f280f/87e8188e-34c4-4b6f-927f-1f8d9e38f921"}
 
 [workflows]
 runButton = "Project"

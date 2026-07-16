@@ -8,7 +8,7 @@ import {
   behavioralTrailsTable,
   growthHypothesesTable,
   researchAssessmentsTable,
-  outreachPackagesTable,
+  gtmSignalsTable,
   type Company,
   type Person,
   type ProductEvent,
@@ -70,6 +70,7 @@ export interface FullProspect {
   events: ProductEvent[];
   behavioralTrail: typeof behavioralTrailsTable.$inferSelect;
   researchAssessment: typeof researchAssessmentsTable.$inferSelect;
+  
 }
 
 /** Generates and persists one full synthetic prospect (company + person + events + trail + assessment). */
