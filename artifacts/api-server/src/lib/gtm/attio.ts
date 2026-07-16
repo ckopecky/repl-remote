@@ -1,39 +1,42 @@
-import type { Company, OutreachPackage, Person } from "@workspace/db";
-import { AttioApiError, createAttioNote, upsertAttioRecord } from "./attioClient";
+import type { Company, GtmSignal, GenerativeAiEmail, Person } from "@workspace/db";
+import {
+  AttioApiError,
+  createAttioRecord,
+  createAttioListEntry,
+  upsertAttioRecord,
+  GTM_SIGNALS_LIST_ID,
+} from "./attioClient";
 import { logger } from "../logger";
+
+// ---------------------------------------------------------------------------
+// Preview payload types (used by the /attio-export preview endpoint)
+// ---------------------------------------------------------------------------
 
 export interface AttioRecordPayload {
   objectSlug: string;
   values: Record<string, unknown>;
 }
 
-export interface AttioNotePreviewPayload {
-  parentObject: string;
-  title: string;
-  content: string;
-}
-
 export interface AttioExportPreview {
   company: AttioRecordPayload;
   person: AttioRecordPayload;
-  note: AttioNotePreviewPayload;
+  gtmSignal: AttioRecordPayload;
+  generativeEmail: AttioRecordPayload | null;
 }
 
 /**
- * Builds a preview of the exact payloads `syncOutreachPackageToAttio` will send:
- * an upsert to the standard `companies` object, an upsert to the standard
- * `people` object, and a note attached to the person record. This mirrors the
- * real sync 1:1 (down to the attribute slugs) so what you see here is what
- * actually gets written when you sync. Building the preview never calls the
- * Attio API itself.
+ * Builds a dry-run preview of the exact payloads `syncGtmSignalToAttio` will
+ * send. Mirrors the real sync 1-to-1 (attribute slugs and all) so the
+ * preview endpoint shows exactly what will be written. Never calls the API.
  */
 export function buildAttioExportPreview(input: {
   company: Company;
   person: Person;
-  outreachPackage: OutreachPackage;
+  gtmSignal: GtmSignal;
+  generativeAiEmail?: GenerativeAiEmail;
 }): AttioExportPreview {
-  const { company, person, outreachPackage } = input;
-  
+  const { company, person, gtmSignal, generativeAiEmail } = input;
+
   const companyPayload: AttioRecordPayload = {
     objectSlug: "companies",
     values: {
@@ -57,95 +60,120 @@ export function buildAttioExportPreview(input: {
     },
   };
 
-  const notePayload: AttioNotePreviewPayload = {
-    parentObject: "people",
-    title: outreachPackage.outreachEmailSubject || `Synthetic GTM Signal: ${outreachPackage.campaign}`,
-    content: buildNoteContent(outreachPackage),
+  const gtmSignalPayload: AttioRecordPayload = {
+    objectSlug: "gtm_signals",
+    values: buildGtmSignalValues(gtmSignal),
   };
 
-  return { company: companyPayload, person: personPayload, note: notePayload };
+  const generativeEmailPayload: AttioRecordPayload | null = generativeAiEmail
+    ? {
+        objectSlug: "generative_ai_emails",
+        values: buildGenerativeEmailValues(generativeAiEmail),
+      }
+    : null;
+
+  return {
+    company: companyPayload,
+    person: personPayload,
+    gtmSignal: gtmSignalPayload,
+    generativeEmail: generativeEmailPayload,
+  };
 }
 
-export interface AttioSyncSuccess {
+// ---------------------------------------------------------------------------
+// Sync result types
+// ---------------------------------------------------------------------------
+
+export interface AttioGtmSyncSuccess {
   ok: true;
   companyRecordId: string;
   personRecordId: string;
   personWebUrl: string;
-  noteId: string;
+  gtmSignalRecordId: string;
+  emailRecordId: string | null;
   syncedAt: Date;
 }
 
-export interface AttioSyncFailure {
+export interface AttioGtmSyncFailure {
   ok: false;
   error: string;
 }
 
-export type AttioSyncResult = AttioSyncSuccess | AttioSyncFailure;
+export type AttioGtmSyncResult = AttioGtmSyncSuccess | AttioGtmSyncFailure;
 
-/** Formats a company's multi-valued industry/product fields into one readable line. */
+// ---------------------------------------------------------------------------
+// Payload builders
+// ---------------------------------------------------------------------------
+
 function buildCompanyDescription(company: Company): string {
   const industry = company.industry.join(", ");
   return `${industry} · ${company.employeeCount} employees (${company.employeeRange}) · ${company.fundingStage}. ${company.growthSignal}.`;
 }
 
-function buildNoteContent(outreachPackage: OutreachPackage): string {
-  return [
-    "Draft outreach email:",
-    "",
-    `Subject: ${outreachPackage.outreachEmailSubject || "(not yet generated)"}`,
-    "",
-    outreachPackage.outreachEmailBody || "(not yet generated)",
-    "",
-    "---",
-    "",
-    `Campaign: ${outreachPackage.campaign}`,
-    `Source signal: ${outreachPackage.sourceSignal}`,
-    `Agent confidence: ${outreachPackage.agentConfidence ?? "n/a"}`,
-    "",
-    "Behavioral trail:",
-    ...outreachPackage.behavioralTrail.map((line) => `- ${line}`),
-    "",
-    `Behavior summary: ${outreachPackage.behaviorSummary}`,
-    "",
-    `Research summary: ${outreachPackage.researchSummary}`,
-    "",
-    `Recommended outreach angle: ${outreachPackage.outreachAngle}`,
-    "",
-    `Growth hypothesis version: ${outreachPackage.hypothesisVersion}`,
-    `Prompt version: ${outreachPackage.promptVersion}`,
-    "",
-    "This note was generated by the Synthetic GTM Signal Engine demo. The company, " +
-      "person, and behavioral data referenced here are synthetic/fictional and were " +
-      "generated for demo purposes -- they do not represent a real prospect. The draft " +
-      "email above and the research summary/angle below were generated by a real LLM call " +
-      "reasoning over this synthetic data.",
-  ].join("\n");
+function buildGtmSignalValues(gtmSignal: GtmSignal): Record<string, unknown> {
+  return {
+    gtm_signal_title: gtmSignal.sourceSignal,
+    batch: gtmSignal.batch,
+    behavior_flow: gtmSignal.behavioralTrail,
+    research_notes: gtmSignal.researchNotes,
+    auth_problem_angle: gtmSignal.authProblemAngle ?? "",
+    signal_date: gtmSignal.createdAt.toISOString(),
+    synthetic_data: true,
+  };
 }
 
+function buildGenerativeEmailValues(
+  email: GenerativeAiEmail,
+): Record<string, unknown> {
+  return {
+    subject: email.subject,
+    body: email.body,
+    email_version: email.emailVersion,
+    agent_confidence: email.agentConfidence ?? "low",
+    synthetic_data: true,
+    outreach_status: "not started",
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Real sync
+// ---------------------------------------------------------------------------
+
 /**
- * Pushes the company, person, and an outreach note to a real Attio workspace via
- * the Attio REST API. Requires ATTIO_API_KEY to be configured. Never throws --
- * returns a result object so callers can persist success/failure state.
+ * Pushes a GTM Signal — and its associated Generative AI Email if one exists —
+ * to Attio. Sync order:
+ *   1. Upsert Company  (standard object, matched by domain)
+ *   2. Upsert Person   (standard object, matched by email)
+ *   3. Create GTM Signal record  (custom object: gtm_signals)
+ *   4. Create Generative AI Email record  (custom object: generative_ai_emails)
+ *   5. Add GTM Signal to the H2 FY26 Growth list
+ *
+ * Never throws — returns a result object so callers can persist
+ * success/failure state.
  */
-export async function syncOutreachPackageToAttio(input: {
+export async function syncGtmSignalToAttio(input: {
   company: Company;
   person: Person;
-  outreachPackage: OutreachPackage;
-}): Promise<AttioSyncResult> {
-  const { company, person, outreachPackage } = input;
+  gtmSignal: GtmSignal;
+  generativeAiEmail?: GenerativeAiEmail;
+}): Promise<AttioGtmSyncResult> {
+  const { company, person, gtmSignal, generativeAiEmail } = input;
 
   if (!process.env.ATTIO_API_KEY) {
     return { ok: false, error: "ATTIO_API_KEY is not configured" };
   }
 
   try {
+    // 1. Upsert Company
     const companyRecord = await upsertAttioRecord("companies", "domains", {
       domains: [company.domain],
       name: company.name,
       description: buildCompanyDescription(company),
     });
     const companyRecordId = companyRecord.data.id.record_id;
+    logger.info({ companyRecordId }, "Attio: company upserted");
 
+    // 2. Upsert Person
     const personRecord = await upsertAttioRecord("people", "email_addresses", {
       email_addresses: [person.email],
       name: {
@@ -157,20 +185,43 @@ export async function syncOutreachPackageToAttio(input: {
       company: company.domain,
     });
     const personRecordId = personRecord.data.id.record_id;
+    logger.info({ personRecordId }, "Attio: person upserted");
 
-    const note = await createAttioNote({
-      parentObject: "people",
-      parentRecordId: personRecordId,
-      title: outreachPackage.outreachEmailSubject || `Synthetic GTM Signal: ${outreachPackage.campaign}`,
-      content: buildNoteContent(outreachPackage),
+    // 3. Create GTM Signal record
+    const gtmSignalRecord = await createAttioRecord("gtm_signals", {
+      ...buildGtmSignalValues(gtmSignal),
+      // Relate back to the Company and Person records we just upserted
+      company: companyRecordId,
+      person: personRecordId,
     });
+    const gtmSignalRecordId = gtmSignalRecord.data.id.record_id;
+    logger.info({ gtmSignalRecordId }, "Attio: GTM Signal record created");
+
+    // 4. Create Generative AI Email record (optional — only if content exists)
+    let emailRecordId: string | null = null;
+    if (generativeAiEmail && generativeAiEmail.subject) {
+      const emailRecord = await createAttioRecord("generative_ai_emails", {
+        ...buildGenerativeEmailValues(generativeAiEmail),
+        // Link back to the GTM Signal
+        gtm_signals: [gtmSignalRecordId],
+        current_person_ref: personRecordId,
+        current_company_ref: companyRecordId,
+      });
+      emailRecordId = emailRecord.data.id.record_id;
+      logger.info({ emailRecordId }, "Attio: Generative AI Email record created");
+    }
+
+    // 5. Add GTM Signal to the H2 FY26 Growth list
+    await createAttioListEntry(GTM_SIGNALS_LIST_ID, "gtm_signals", gtmSignalRecordId);
+    logger.info({ gtmSignalRecordId, listId: GTM_SIGNALS_LIST_ID }, "Attio: GTM Signal added to list");
 
     return {
       ok: true,
       companyRecordId,
       personRecordId,
       personWebUrl: personRecord.data.web_url,
-      noteId: note.data.id.note_id,
+      gtmSignalRecordId,
+      emailRecordId,
       syncedAt: new Date(),
     };
   } catch (err) {
@@ -180,6 +231,7 @@ export async function syncOutreachPackageToAttio(input: {
         : err instanceof Error
           ? err.message
           : "Unknown error syncing to Attio";
+    logger.error({ err }, "Attio sync failed");
     return { ok: false, error: message };
   }
 }

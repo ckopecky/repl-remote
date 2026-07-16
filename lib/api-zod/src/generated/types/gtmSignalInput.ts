@@ -5,8 +5,7 @@
  * Synthetic GTM Signal Engine API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { OutreachStatus } from './outreachStatus';
 
-export type ListOutreachPackagesParams = {
-status?: OutreachStatus;
-};
+export interface GtmSignalInput {
+  personId: number;
+}

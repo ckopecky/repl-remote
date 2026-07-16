@@ -30,13 +30,13 @@ import type {
   GrowthHypothesis,
   GrowthHypothesisInput,
   GrowthHypothesisSaveResult,
+  GtmSignal,
+  GtmSignalInput,
+  GtmSignalListItem,
+  GtmSignalUpdate,
   HealthStatus,
-  ListOutreachPackagesParams,
+  ListGtmSignalsParams,
   ListProspectsParams,
-  OutreachPackage,
-  OutreachPackageInput,
-  OutreachPackageListItem,
-  OutreachPackageUpdate,
   ProspectDetail,
   ProspectListItem,
   RecalculationResult,
@@ -612,7 +612,7 @@ export function useGetCurrentHypothesis<TData = Awaited<ReturnType<typeof getCur
 
 
 
-export const getListOutreachPackagesUrl = (params?: ListOutreachPackagesParams,) => {
+export const getListGtmSignalsUrl = (params?: ListGtmSignalsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -624,15 +624,15 @@ export const getListOutreachPackagesUrl = (params?: ListOutreachPackagesParams,)
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/outreach-packages?${stringifiedParams}` : `/api/outreach-packages`
+  return stringifiedParams.length > 0 ? `/api/gtm-signals?${stringifiedParams}` : `/api/gtm-signals`
 }
 
 /**
- * @summary List outreach packages (queue)
+ * @summary List GTM signals (queue)
  */
-export const listOutreachPackages = async (params?: ListOutreachPackagesParams, options?: RequestInit): Promise<OutreachPackageListItem[]> => {
+export const listGtmSignals = async (params?: ListGtmSignalsParams, options?: RequestInit): Promise<GtmSignalListItem[]> => {
 
-  return customFetch<OutreachPackageListItem[]>(getListOutreachPackagesUrl(params),
+  return customFetch<GtmSignalListItem[]>(getListGtmSignalsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -645,45 +645,45 @@ export const listOutreachPackages = async (params?: ListOutreachPackagesParams, 
 
 
 
-export const getListOutreachPackagesQueryKey = (params?: ListOutreachPackagesParams,) => {
+export const getListGtmSignalsQueryKey = (params?: ListGtmSignalsParams,) => {
     return [
-    `/api/outreach-packages`, ...(params ? [params] : [])
+    `/api/gtm-signals`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListOutreachPackagesQueryOptions = <TData = Awaited<ReturnType<typeof listOutreachPackages>>, TError = ErrorType<unknown>>(params?: ListOutreachPackagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOutreachPackages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListGtmSignalsQueryOptions = <TData = Awaited<ReturnType<typeof listGtmSignals>>, TError = ErrorType<unknown>>(params?: ListGtmSignalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGtmSignals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListOutreachPackagesQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getListGtmSignalsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOutreachPackages>>> = ({ signal }) => listOutreachPackages(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listGtmSignals>>> = ({ signal }) => listGtmSignals(params, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOutreachPackages>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listGtmSignals>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type ListOutreachPackagesQueryResult = NonNullable<Awaited<ReturnType<typeof listOutreachPackages>>>
-export type ListOutreachPackagesQueryError = ErrorType<unknown>
+export type ListGtmSignalsQueryResult = NonNullable<Awaited<ReturnType<typeof listGtmSignals>>>
+export type ListGtmSignalsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List outreach packages (queue)
+ * @summary List GTM signals (queue)
  */
 
-export function useListOutreachPackages<TData = Awaited<ReturnType<typeof listOutreachPackages>>, TError = ErrorType<unknown>>(
- params?: ListOutreachPackagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOutreachPackages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useListGtmSignals<TData = Awaited<ReturnType<typeof listGtmSignals>>, TError = ErrorType<unknown>>(
+ params?: ListGtmSignalsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGtmSignals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListOutreachPackagesQueryOptions(params,options)
+  const queryOptions = getListGtmSignalsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -696,25 +696,25 @@ export function useListOutreachPackages<TData = Awaited<ReturnType<typeof listOu
 
 
 
-export const getCreateOutreachPackageUrl = () => {
+export const getCreateGtmSignalUrl = () => {
 
 
 
 
-  return `/api/outreach-packages`
+  return `/api/gtm-signals`
 }
 
 /**
- * @summary Create an outreach package for a high/medium priority prospect
+ * @summary Create a GTM signal for a high/medium priority prospect
  */
-export const createOutreachPackage = async (outreachPackageInput: OutreachPackageInput, options?: RequestInit): Promise<OutreachPackage> => {
+export const createGtmSignal = async (gtmSignalInput: GtmSignalInput, options?: RequestInit): Promise<GtmSignal> => {
 
-  return customFetch<OutreachPackage>(getCreateOutreachPackageUrl(),
+  return customFetch<GtmSignal>(getCreateGtmSignalUrl(),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(outreachPackageInput)
+    body: JSON.stringify(gtmSignalInput)
   }
 );}
 
@@ -722,11 +722,11 @@ export const createOutreachPackage = async (outreachPackageInput: OutreachPackag
 
 
 
-export const getCreateOutreachPackageMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOutreachPackage>>, TError,{data: BodyType<OutreachPackageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createOutreachPackage>>, TError,{data: BodyType<OutreachPackageInput>}, TContext> => {
+export const getCreateGtmSignalMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGtmSignal>>, TError,{data: BodyType<GtmSignalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createGtmSignal>>, TError,{data: BodyType<GtmSignalInput>}, TContext> => {
 
-const mutationKey = ['createOutreachPackage'];
+const mutationKey = ['createGtmSignal'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -736,10 +736,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOutreachPackage>>, {data: BodyType<OutreachPackageInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createGtmSignal>>, {data: BodyType<GtmSignalInput>}> = (props) => {
           const {data} = props ?? {};
 
-          return  createOutreachPackage(data,requestOptions)
+          return  createGtmSignal(data,requestOptions)
         }
 
 
@@ -749,38 +749,38 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type CreateOutreachPackageMutationResult = NonNullable<Awaited<ReturnType<typeof createOutreachPackage>>>
-    export type CreateOutreachPackageMutationBody = BodyType<OutreachPackageInput>
-    export type CreateOutreachPackageMutationError = ErrorType<ErrorResponse>
+    export type CreateGtmSignalMutationResult = NonNullable<Awaited<ReturnType<typeof createGtmSignal>>>
+    export type CreateGtmSignalMutationBody = BodyType<GtmSignalInput>
+    export type CreateGtmSignalMutationError = ErrorType<ErrorResponse>
 
     /**
- * @summary Create an outreach package for a high/medium priority prospect
+ * @summary Create a GTM signal for a high/medium priority prospect
  */
-export const useCreateOutreachPackage = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOutreachPackage>>, TError,{data: BodyType<OutreachPackageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useCreateGtmSignal = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGtmSignal>>, TError,{data: BodyType<GtmSignalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof createOutreachPackage>>,
+        Awaited<ReturnType<typeof createGtmSignal>>,
         TError,
-        {data: BodyType<OutreachPackageInput>},
+        {data: BodyType<GtmSignalInput>},
         TContext
       > => {
-      return useMutation(getCreateOutreachPackageMutationOptions(options));
+      return useMutation(getCreateGtmSignalMutationOptions(options));
     }
 
-export const getGetOutreachPackageUrl = (id: number,) => {
+export const getGetGtmSignalUrl = (id: number,) => {
 
 
 
 
-  return `/api/outreach-packages/${id}`
+  return `/api/gtm-signals/${id}`
 }
 
 /**
- * @summary Get an outreach package by id
+ * @summary Get a GTM signal by id
  */
-export const getOutreachPackage = async (id: number, options?: RequestInit): Promise<OutreachPackage> => {
+export const getGtmSignal = async (id: number, options?: RequestInit): Promise<GtmSignal> => {
 
-  return customFetch<OutreachPackage>(getGetOutreachPackageUrl(id),
+  return customFetch<GtmSignal>(getGetGtmSignalUrl(id),
   {
     ...options,
     method: 'GET'
@@ -793,45 +793,45 @@ export const getOutreachPackage = async (id: number, options?: RequestInit): Pro
 
 
 
-export const getGetOutreachPackageQueryKey = (id: number,) => {
+export const getGetGtmSignalQueryKey = (id: number,) => {
     return [
-    `/api/outreach-packages/${id}`
+    `/api/gtm-signals/${id}`
     ] as const;
     }
 
 
-export const getGetOutreachPackageQueryOptions = <TData = Awaited<ReturnType<typeof getOutreachPackage>>, TError = ErrorType<ErrorResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOutreachPackage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetGtmSignalQueryOptions = <TData = Awaited<ReturnType<typeof getGtmSignal>>, TError = ErrorType<ErrorResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGtmSignal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetOutreachPackageQueryKey(id);
+  const queryKey =  queryOptions?.queryKey ?? getGetGtmSignalQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOutreachPackage>>> = ({ signal }) => getOutreachPackage(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGtmSignal>>> = ({ signal }) => getGtmSignal(id, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOutreachPackage>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGtmSignal>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetOutreachPackageQueryResult = NonNullable<Awaited<ReturnType<typeof getOutreachPackage>>>
-export type GetOutreachPackageQueryError = ErrorType<ErrorResponse>
+export type GetGtmSignalQueryResult = NonNullable<Awaited<ReturnType<typeof getGtmSignal>>>
+export type GetGtmSignalQueryError = ErrorType<ErrorResponse>
 
 
 /**
- * @summary Get an outreach package by id
+ * @summary Get a GTM signal by id
  */
 
-export function useGetOutreachPackage<TData = Awaited<ReturnType<typeof getOutreachPackage>>, TError = ErrorType<ErrorResponse>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOutreachPackage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetGtmSignal<TData = Awaited<ReturnType<typeof getGtmSignal>>, TError = ErrorType<ErrorResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGtmSignal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetOutreachPackageQueryOptions(id,options)
+  const queryOptions = getGetGtmSignalQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -844,26 +844,26 @@ export function useGetOutreachPackage<TData = Awaited<ReturnType<typeof getOutre
 
 
 
-export const getUpdateOutreachPackageUrl = (id: number,) => {
+export const getUpdateGtmSignalUrl = (id: number,) => {
 
 
 
 
-  return `/api/outreach-packages/${id}`
+  return `/api/gtm-signals/${id}`
 }
 
 /**
- * @summary Update the status of an outreach package
+ * @summary Update the status of a GTM signal
  */
-export const updateOutreachPackage = async (id: number,
-    outreachPackageUpdate: OutreachPackageUpdate, options?: RequestInit): Promise<OutreachPackage> => {
+export const updateGtmSignal = async (id: number,
+    gtmSignalUpdate: GtmSignalUpdate, options?: RequestInit): Promise<GtmSignal> => {
 
-  return customFetch<OutreachPackage>(getUpdateOutreachPackageUrl(id),
+  return customFetch<GtmSignal>(getUpdateGtmSignalUrl(id),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(outreachPackageUpdate)
+    body: JSON.stringify(gtmSignalUpdate)
   }
 );}
 
@@ -871,11 +871,11 @@ export const updateOutreachPackage = async (id: number,
 
 
 
-export const getUpdateOutreachPackageMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOutreachPackage>>, TError,{id: number;data: BodyType<OutreachPackageUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateOutreachPackage>>, TError,{id: number;data: BodyType<OutreachPackageUpdate>}, TContext> => {
+export const getUpdateGtmSignalMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGtmSignal>>, TError,{id: number;data: BodyType<GtmSignalUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateGtmSignal>>, TError,{id: number;data: BodyType<GtmSignalUpdate>}, TContext> => {
 
-const mutationKey = ['updateOutreachPackage'];
+const mutationKey = ['updateGtmSignal'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -885,10 +885,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOutreachPackage>>, {id: number;data: BodyType<OutreachPackageUpdate>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateGtmSignal>>, {id: number;data: BodyType<GtmSignalUpdate>}> = (props) => {
           const {id,data} = props ?? {};
 
-          return  updateOutreachPackage(id,data,requestOptions)
+          return  updateGtmSignal(id,data,requestOptions)
         }
 
 
@@ -898,38 +898,38 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type UpdateOutreachPackageMutationResult = NonNullable<Awaited<ReturnType<typeof updateOutreachPackage>>>
-    export type UpdateOutreachPackageMutationBody = BodyType<OutreachPackageUpdate>
-    export type UpdateOutreachPackageMutationError = ErrorType<ErrorResponse>
+    export type UpdateGtmSignalMutationResult = NonNullable<Awaited<ReturnType<typeof updateGtmSignal>>>
+    export type UpdateGtmSignalMutationBody = BodyType<GtmSignalUpdate>
+    export type UpdateGtmSignalMutationError = ErrorType<ErrorResponse>
 
     /**
- * @summary Update the status of an outreach package
+ * @summary Update the status of a GTM signal
  */
-export const useUpdateOutreachPackage = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOutreachPackage>>, TError,{id: number;data: BodyType<OutreachPackageUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useUpdateGtmSignal = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGtmSignal>>, TError,{id: number;data: BodyType<GtmSignalUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof updateOutreachPackage>>,
+        Awaited<ReturnType<typeof updateGtmSignal>>,
         TError,
-        {id: number;data: BodyType<OutreachPackageUpdate>},
+        {id: number;data: BodyType<GtmSignalUpdate>},
         TContext
       > => {
-      return useMutation(getUpdateOutreachPackageMutationOptions(options));
+      return useMutation(getUpdateGtmSignalMutationOptions(options));
     }
 
-export const getSyncOutreachPackageToAttioUrl = (id: number,) => {
+export const getSyncGtmSignalToAttioUrl = (id: number,) => {
 
 
 
 
-  return `/api/outreach-packages/${id}/attio-sync`
+  return `/api/gtm-signals/${id}/attio-sync`
 }
 
 /**
- * @summary Push this outreach package's company, person, and note to the connected Attio workspace
+ * @summary Push this GTM signal's Company, Person, GTM Signal record, Generative AI Email record, and List entry to the connected Attio workspace
  */
-export const syncOutreachPackageToAttio = async (id: number, options?: RequestInit): Promise<OutreachPackage> => {
+export const syncGtmSignalToAttio = async (id: number, options?: RequestInit): Promise<GtmSignal> => {
 
-  return customFetch<OutreachPackage>(getSyncOutreachPackageToAttioUrl(id),
+  return customFetch<GtmSignal>(getSyncGtmSignalToAttioUrl(id),
   {
     ...options,
     method: 'POST'
@@ -942,11 +942,11 @@ export const syncOutreachPackageToAttio = async (id: number, options?: RequestIn
 
 
 
-export const getSyncOutreachPackageToAttioMutationOptions = <TError = ErrorType<ErrorResponse | OutreachPackage>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>, TError,{id: number}, TContext> => {
+export const getSyncGtmSignalToAttioMutationOptions = <TError = ErrorType<ErrorResponse | GtmSignal>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncGtmSignalToAttio>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncGtmSignalToAttio>>, TError,{id: number}, TContext> => {
 
-const mutationKey = ['syncOutreachPackageToAttio'];
+const mutationKey = ['syncGtmSignalToAttio'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -956,10 +956,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>, {id: number}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncGtmSignalToAttio>>, {id: number}> = (props) => {
           const {id} = props ?? {};
 
-          return  syncOutreachPackageToAttio(id,requestOptions)
+          return  syncGtmSignalToAttio(id,requestOptions)
         }
 
 
@@ -969,38 +969,38 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type SyncOutreachPackageToAttioMutationResult = NonNullable<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>>
+    export type SyncGtmSignalToAttioMutationResult = NonNullable<Awaited<ReturnType<typeof syncGtmSignalToAttio>>>
 
-    export type SyncOutreachPackageToAttioMutationError = ErrorType<ErrorResponse | OutreachPackage>
+    export type SyncGtmSignalToAttioMutationError = ErrorType<ErrorResponse | GtmSignal>
 
     /**
- * @summary Push this outreach package's company, person, and note to the connected Attio workspace
+ * @summary Push this GTM signal's Company, Person, GTM Signal record, Generative AI Email record, and List entry to the connected Attio workspace
  */
-export const useSyncOutreachPackageToAttio = <TError = ErrorType<ErrorResponse | OutreachPackage>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncOutreachPackageToAttio>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useSyncGtmSignalToAttio = <TError = ErrorType<ErrorResponse | GtmSignal>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncGtmSignalToAttio>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof syncOutreachPackageToAttio>>,
+        Awaited<ReturnType<typeof syncGtmSignalToAttio>>,
         TError,
         {id: number},
         TContext
       > => {
-      return useMutation(getSyncOutreachPackageToAttioMutationOptions(options));
+      return useMutation(getSyncGtmSignalToAttioMutationOptions(options));
     }
 
-export const getGenerateOutreachPackageContentUrl = (id: number,) => {
+export const getGenerateGtmSignalContentUrl = (id: number,) => {
 
 
 
 
-  return `/api/outreach-packages/${id}/generate`
+  return `/api/gtm-signals/${id}/generate`
 }
 
 /**
- * @summary Generate (or regenerate) this package's outreach angle, research summary, and draft outreach email using a real LLM call over the behavioral trail and company context. Moves the package to "Needs Review" on success.
+ * @summary Generate (or regenerate) this signal's outreach angle, research notes, and draft email using a real LLM call. Moves the signal to "Needs Review" on success and creates a new Generative AI Email row.
  */
-export const generateOutreachPackageContent = async (id: number, options?: RequestInit): Promise<OutreachPackage> => {
+export const generateGtmSignalContent = async (id: number, options?: RequestInit): Promise<GtmSignal> => {
 
-  return customFetch<OutreachPackage>(getGenerateOutreachPackageContentUrl(id),
+  return customFetch<GtmSignal>(getGenerateGtmSignalContentUrl(id),
   {
     ...options,
     method: 'POST'
@@ -1013,11 +1013,11 @@ export const generateOutreachPackageContent = async (id: number, options?: Reque
 
 
 
-export const getGenerateOutreachPackageContentMutationOptions = <TError = ErrorType<ErrorResponse | OutreachPackage>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateOutreachPackageContent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof generateOutreachPackageContent>>, TError,{id: number}, TContext> => {
+export const getGenerateGtmSignalContentMutationOptions = <TError = ErrorType<ErrorResponse | GtmSignal>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateGtmSignalContent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateGtmSignalContent>>, TError,{id: number}, TContext> => {
 
-const mutationKey = ['generateOutreachPackageContent'];
+const mutationKey = ['generateGtmSignalContent'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1027,10 +1027,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateOutreachPackageContent>>, {id: number}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateGtmSignalContent>>, {id: number}> = (props) => {
           const {id} = props ?? {};
 
-          return  generateOutreachPackageContent(id,requestOptions)
+          return  generateGtmSignalContent(id,requestOptions)
         }
 
 
@@ -1040,22 +1040,22 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type GenerateOutreachPackageContentMutationResult = NonNullable<Awaited<ReturnType<typeof generateOutreachPackageContent>>>
+    export type GenerateGtmSignalContentMutationResult = NonNullable<Awaited<ReturnType<typeof generateGtmSignalContent>>>
 
-    export type GenerateOutreachPackageContentMutationError = ErrorType<ErrorResponse | OutreachPackage>
+    export type GenerateGtmSignalContentMutationError = ErrorType<ErrorResponse | GtmSignal>
 
     /**
- * @summary Generate (or regenerate) this package's outreach angle, research summary, and draft outreach email using a real LLM call over the behavioral trail and company context. Moves the package to "Needs Review" on success.
+ * @summary Generate (or regenerate) this signal's outreach angle, research notes, and draft email using a real LLM call. Moves the signal to "Needs Review" on success and creates a new Generative AI Email row.
  */
-export const useGenerateOutreachPackageContent = <TError = ErrorType<ErrorResponse | OutreachPackage>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateOutreachPackageContent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useGenerateGtmSignalContent = <TError = ErrorType<ErrorResponse | GtmSignal>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateGtmSignalContent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof generateOutreachPackageContent>>,
+        Awaited<ReturnType<typeof generateGtmSignalContent>>,
         TError,
         {id: number},
         TContext
       > => {
-      return useMutation(getGenerateOutreachPackageContentMutationOptions(options));
+      return useMutation(getGenerateGtmSignalContentMutationOptions(options));
     }
 
 export const getGetAttioExportPreviewUrl = (id: number,) => {
@@ -1063,11 +1063,11 @@ export const getGetAttioExportPreviewUrl = (id: number,) => {
 
 
 
-  return `/api/outreach-packages/${id}/attio-export`
+  return `/api/gtm-signals/${id}/attio-export`
 }
 
 /**
- * @summary Get Attio-compatible export payload previews for a package
+ * @summary Get Attio-compatible export payload previews for a GTM signal
  */
 export const getAttioExportPreview = async (id: number, options?: RequestInit): Promise<AttioExportPreview> => {
 
@@ -1086,7 +1086,7 @@ export const getAttioExportPreview = async (id: number, options?: RequestInit): 
 
 export const getGetAttioExportPreviewQueryKey = (id: number,) => {
     return [
-    `/api/outreach-packages/${id}/attio-export`
+    `/api/gtm-signals/${id}/attio-export`
     ] as const;
     }
 
@@ -1114,7 +1114,7 @@ export type GetAttioExportPreviewQueryError = ErrorType<ErrorResponse>
 
 
 /**
- * @summary Get Attio-compatible export payload previews for a package
+ * @summary Get Attio-compatible export payload previews for a GTM signal
  */
 
 export function useGetAttioExportPreview<TData = Awaited<ReturnType<typeof getAttioExportPreview>>, TError = ErrorType<ErrorResponse>>(

@@ -8,31 +8,38 @@
 import type { AgentConfidence } from './agentConfidence';
 import type { AttioSyncStatus } from './attioSyncStatus';
 import type { GenerationStatus } from './generationStatus';
-import type { OutreachStatus } from './outreachStatus';
+import type { GtmSignalStatus } from './gtmSignalStatus';
 
-export interface OutreachPackage {
+export interface GtmSignal {
   id: number;
   personId: number;
   companyId: number;
-  campaign: string;
   sourceSignal: string;
   behavioralTrail: string[];
   behaviorSummary: string;
-  researchSummary: string;
+  researchNotes: string;
+  /** @nullable */
+  authProblemAngle: string | null;
   outreachAngle: string;
   hypothesisVersion: string;
   promptVersion: string;
-  status: OutreachStatus;
+  status: GtmSignalStatus;
   exportedToAttio: boolean;
   attioSyncStatus: AttioSyncStatus;
+  /** @nullable */
   attioCompanyRecordId: string | null;
+  /** @nullable */
   attioPersonRecordId: string | null;
-  attioNoteId: string | null;
+  /** @nullable */
+  attioGtmSignalRecordId: string | null;
+  /** @nullable */
   attioPersonWebUrl: string | null;
+  /** @nullable */
   attioSyncError: string | null;
   /** @nullable */
   attioSyncedAt: Date | null;
   generationStatus: GenerationStatus;
+  /** @nullable */
   generationError: string | null;
   agentConfidence: AgentConfidence | null;
   outreachEmailSubject: string;

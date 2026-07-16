@@ -149,29 +149,29 @@ export const GetProspectDetailResponse = zod.object({
   "riskNotes": zod.string(),
   "generatedAt": zod.coerce.date()
 }),
-  "outreachPackage": zod.union([zod.object({
+  "gtmSignal": zod.union([zod.object({
   "id": zod.number(),
   "personId": zod.number(),
   "companyId": zod.number(),
-  "campaign": zod.string(),
   "sourceSignal": zod.string(),
   "behavioralTrail": zod.array(zod.string()),
   "behaviorSummary": zod.string(),
-  "researchSummary": zod.string(),
+  "researchNotes": zod.string(),
+  "authProblemAngle": zod.string().nullable(),
   "outreachAngle": zod.string(),
   "hypothesisVersion": zod.string(),
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
   "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
-  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
-  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
-  "attioNoteId": zod.union([zod.string(),zod.null()]),
-  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
-  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioCompanyRecordId": zod.string().nullable(),
+  "attioPersonRecordId": zod.string().nullable(),
+  "attioGtmSignalRecordId": zod.string().nullable(),
+  "attioPersonWebUrl": zod.string().nullable(),
+  "attioSyncError": zod.string().nullable(),
   "attioSyncedAt": zod.coerce.date().nullable(),
   "generationStatus": zod.enum(['pending', 'generated', 'failed']),
-  "generationError": zod.union([zod.string(),zod.null()]),
+  "generationError": zod.string().nullable(),
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
@@ -292,13 +292,13 @@ export const GetCurrentHypothesisResponse = zod.object({
 
 
 /**
- * @summary List outreach packages (queue)
+ * @summary List GTM signals (queue)
  */
-export const ListOutreachPackagesQueryParams = zod.object({
+export const ListGtmSignalsQueryParams = zod.object({
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']).optional()
 })
 
-export const ListOutreachPackagesResponseItem = zod.object({
+export const ListGtmSignalsResponseItem = zod.object({
   "id": zod.number(),
   "personId": zod.number(),
   "personName": zod.string(),
@@ -315,40 +315,39 @@ export const ListOutreachPackagesResponseItem = zod.object({
   "attioSyncError": zod.union([zod.string(),zod.null()]),
   "createdAt": zod.coerce.date()
 })
-export const ListOutreachPackagesResponse = zod.array(ListOutreachPackagesResponseItem)
+export const ListGtmSignalsResponse = zod.array(ListGtmSignalsResponseItem)
 
 
 /**
- * @summary Create an outreach package for a high/medium priority prospect
+ * @summary Create a GTM signal for a high/medium priority prospect
  */
-export const CreateOutreachPackageBody = zod.object({
-  "personId": zod.number(),
-  "campaign": zod.string().optional()
+export const CreateGtmSignalBody = zod.object({
+  "personId": zod.number()
 })
 
-export const CreateOutreachPackageResponse = zod.object({
+export const CreateGtmSignalResponse = zod.object({
   "id": zod.number(),
   "personId": zod.number(),
   "companyId": zod.number(),
-  "campaign": zod.string(),
   "sourceSignal": zod.string(),
   "behavioralTrail": zod.array(zod.string()),
   "behaviorSummary": zod.string(),
-  "researchSummary": zod.string(),
+  "researchNotes": zod.string(),
+  "authProblemAngle": zod.string().nullable(),
   "outreachAngle": zod.string(),
   "hypothesisVersion": zod.string(),
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
   "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
-  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
-  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
-  "attioNoteId": zod.union([zod.string(),zod.null()]),
-  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
-  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioCompanyRecordId": zod.string().nullable(),
+  "attioPersonRecordId": zod.string().nullable(),
+  "attioGtmSignalRecordId": zod.string().nullable(),
+  "attioPersonWebUrl": zod.string().nullable(),
+  "attioSyncError": zod.string().nullable(),
   "attioSyncedAt": zod.coerce.date().nullable(),
   "generationStatus": zod.enum(['pending', 'generated', 'failed']),
-  "generationError": zod.union([zod.string(),zod.null()]),
+  "generationError": zod.string().nullable(),
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
@@ -357,35 +356,35 @@ export const CreateOutreachPackageResponse = zod.object({
 
 
 /**
- * @summary Get an outreach package by id
+ * @summary Get a GTM signal by id
  */
-export const GetOutreachPackageParams = zod.object({
+export const GetGtmSignalParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const GetOutreachPackageResponse = zod.object({
+export const GetGtmSignalResponse = zod.object({
   "id": zod.number(),
   "personId": zod.number(),
   "companyId": zod.number(),
-  "campaign": zod.string(),
   "sourceSignal": zod.string(),
   "behavioralTrail": zod.array(zod.string()),
   "behaviorSummary": zod.string(),
-  "researchSummary": zod.string(),
+  "researchNotes": zod.string(),
+  "authProblemAngle": zod.string().nullable(),
   "outreachAngle": zod.string(),
   "hypothesisVersion": zod.string(),
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
   "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
-  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
-  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
-  "attioNoteId": zod.union([zod.string(),zod.null()]),
-  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
-  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioCompanyRecordId": zod.string().nullable(),
+  "attioPersonRecordId": zod.string().nullable(),
+  "attioGtmSignalRecordId": zod.string().nullable(),
+  "attioPersonWebUrl": zod.string().nullable(),
+  "attioSyncError": zod.string().nullable(),
   "attioSyncedAt": zod.coerce.date().nullable(),
   "generationStatus": zod.enum(['pending', 'generated', 'failed']),
-  "generationError": zod.union([zod.string(),zod.null()]),
+  "generationError": zod.string().nullable(),
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
@@ -394,39 +393,39 @@ export const GetOutreachPackageResponse = zod.object({
 
 
 /**
- * @summary Update the status of an outreach package
+ * @summary Update the status of a GTM signal
  */
-export const UpdateOutreachPackageParams = zod.object({
+export const UpdateGtmSignalParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const UpdateOutreachPackageBody = zod.object({
+export const UpdateGtmSignalBody = zod.object({
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied'])
 })
 
-export const UpdateOutreachPackageResponse = zod.object({
+export const UpdateGtmSignalResponse = zod.object({
   "id": zod.number(),
   "personId": zod.number(),
   "companyId": zod.number(),
-  "campaign": zod.string(),
   "sourceSignal": zod.string(),
   "behavioralTrail": zod.array(zod.string()),
   "behaviorSummary": zod.string(),
-  "researchSummary": zod.string(),
+  "researchNotes": zod.string(),
+  "authProblemAngle": zod.string().nullable(),
   "outreachAngle": zod.string(),
   "hypothesisVersion": zod.string(),
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
   "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
-  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
-  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
-  "attioNoteId": zod.union([zod.string(),zod.null()]),
-  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
-  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioCompanyRecordId": zod.string().nullable(),
+  "attioPersonRecordId": zod.string().nullable(),
+  "attioGtmSignalRecordId": zod.string().nullable(),
+  "attioPersonWebUrl": zod.string().nullable(),
+  "attioSyncError": zod.string().nullable(),
   "attioSyncedAt": zod.coerce.date().nullable(),
   "generationStatus": zod.enum(['pending', 'generated', 'failed']),
-  "generationError": zod.union([zod.string(),zod.null()]),
+  "generationError": zod.string().nullable(),
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
@@ -435,35 +434,35 @@ export const UpdateOutreachPackageResponse = zod.object({
 
 
 /**
- * @summary Push this outreach package's company, person, and note to the connected Attio workspace
+ * @summary Push this GTM signal's Company, Person, GTM Signal record, Generative AI Email record, and List entry to the connected Attio workspace
  */
-export const SyncOutreachPackageToAttioParams = zod.object({
+export const SyncGtmSignalToAttioParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const SyncOutreachPackageToAttioResponse = zod.object({
+export const SyncGtmSignalToAttioResponse = zod.object({
   "id": zod.number(),
   "personId": zod.number(),
   "companyId": zod.number(),
-  "campaign": zod.string(),
   "sourceSignal": zod.string(),
   "behavioralTrail": zod.array(zod.string()),
   "behaviorSummary": zod.string(),
-  "researchSummary": zod.string(),
+  "researchNotes": zod.string(),
+  "authProblemAngle": zod.string().nullable(),
   "outreachAngle": zod.string(),
   "hypothesisVersion": zod.string(),
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
   "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
-  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
-  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
-  "attioNoteId": zod.union([zod.string(),zod.null()]),
-  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
-  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioCompanyRecordId": zod.string().nullable(),
+  "attioPersonRecordId": zod.string().nullable(),
+  "attioGtmSignalRecordId": zod.string().nullable(),
+  "attioPersonWebUrl": zod.string().nullable(),
+  "attioSyncError": zod.string().nullable(),
   "attioSyncedAt": zod.coerce.date().nullable(),
   "generationStatus": zod.enum(['pending', 'generated', 'failed']),
-  "generationError": zod.union([zod.string(),zod.null()]),
+  "generationError": zod.string().nullable(),
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
@@ -472,35 +471,35 @@ export const SyncOutreachPackageToAttioResponse = zod.object({
 
 
 /**
- * @summary Generate (or regenerate) this package's outreach angle, research summary, and draft outreach email using a real LLM call over the behavioral trail and company context. Moves the package to "Needs Review" on success.
+ * @summary Generate (or regenerate) this signal's outreach angle, research notes, and draft email using a real LLM call. Moves the signal to "Needs Review" on success and creates a new Generative AI Email row.
  */
-export const GenerateOutreachPackageContentParams = zod.object({
+export const GenerateGtmSignalContentParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const GenerateOutreachPackageContentResponse = zod.object({
+export const GenerateGtmSignalContentResponse = zod.object({
   "id": zod.number(),
   "personId": zod.number(),
   "companyId": zod.number(),
-  "campaign": zod.string(),
   "sourceSignal": zod.string(),
   "behavioralTrail": zod.array(zod.string()),
   "behaviorSummary": zod.string(),
-  "researchSummary": zod.string(),
+  "researchNotes": zod.string(),
+  "authProblemAngle": zod.string().nullable(),
   "outreachAngle": zod.string(),
   "hypothesisVersion": zod.string(),
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
   "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
-  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
-  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
-  "attioNoteId": zod.union([zod.string(),zod.null()]),
-  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
-  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioCompanyRecordId": zod.string().nullable(),
+  "attioPersonRecordId": zod.string().nullable(),
+  "attioGtmSignalRecordId": zod.string().nullable(),
+  "attioPersonWebUrl": zod.string().nullable(),
+  "attioSyncError": zod.string().nullable(),
   "attioSyncedAt": zod.coerce.date().nullable(),
   "generationStatus": zod.enum(['pending', 'generated', 'failed']),
-  "generationError": zod.union([zod.string(),zod.null()]),
+  "generationError": zod.string().nullable(),
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
@@ -509,7 +508,7 @@ export const GenerateOutreachPackageContentResponse = zod.object({
 
 
 /**
- * @summary Get Attio-compatible export payload previews for a package
+ * @summary Get Attio-compatible export payload previews for a GTM signal
  */
 export const GetAttioExportPreviewParams = zod.object({
   "id": zod.coerce.number()
@@ -524,11 +523,14 @@ export const GetAttioExportPreviewResponse = zod.object({
   "objectSlug": zod.string(),
   "values": zod.record(zod.string(), zod.unknown())
 }),
-  "note": zod.object({
-  "parentObject": zod.string(),
-  "title": zod.string(),
-  "content": zod.string()
-})
+  "gtmSignal": zod.object({
+  "objectSlug": zod.string(),
+  "values": zod.record(zod.string(), zod.unknown())
+}),
+  "generativeEmail": zod.union([zod.object({
+  "objectSlug": zod.string(),
+  "values": zod.record(zod.string(), zod.unknown())
+}),zod.null()]).optional()
 })
 
 
@@ -625,29 +627,29 @@ export const GenerateProspectResponse = zod.object({
   "riskNotes": zod.string(),
   "generatedAt": zod.coerce.date()
 }),
-  "outreachPackage": zod.union([zod.object({
+  "gtmSignal": zod.union([zod.object({
   "id": zod.number(),
   "personId": zod.number(),
   "companyId": zod.number(),
-  "campaign": zod.string(),
   "sourceSignal": zod.string(),
   "behavioralTrail": zod.array(zod.string()),
   "behaviorSummary": zod.string(),
-  "researchSummary": zod.string(),
+  "researchNotes": zod.string(),
+  "authProblemAngle": zod.string().nullable(),
   "outreachAngle": zod.string(),
   "hypothesisVersion": zod.string(),
   "promptVersion": zod.string(),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "exportedToAttio": zod.boolean(),
   "attioSyncStatus": zod.enum(['not_synced', 'synced', 'error']),
-  "attioCompanyRecordId": zod.union([zod.string(),zod.null()]),
-  "attioPersonRecordId": zod.union([zod.string(),zod.null()]),
-  "attioNoteId": zod.union([zod.string(),zod.null()]),
-  "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
-  "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "attioCompanyRecordId": zod.string().nullable(),
+  "attioPersonRecordId": zod.string().nullable(),
+  "attioGtmSignalRecordId": zod.string().nullable(),
+  "attioPersonWebUrl": zod.string().nullable(),
+  "attioSyncError": zod.string().nullable(),
   "attioSyncedAt": zod.coerce.date().nullable(),
   "generationStatus": zod.enum(['pending', 'generated', 'failed']),
-  "generationError": zod.union([zod.string(),zod.null()]),
+  "generationError": zod.string().nullable(),
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),

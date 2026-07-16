@@ -1,5 +1,5 @@
 import { useParams, Link } from "wouter";
-import { useGetProspectDetail, useCreateOutreachPackage } from "@workspace/api-client-react";
+import { useGetProspectDetail, useCreateGtmSignal } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,7 +20,7 @@ export default function ProspectDetail() {
     } 
   });
 
-  const createPackage = useCreateOutreachPackage({
+  const createPackage = useCreateGtmSignal({
     mutation: {
       onSuccess: () => {
         toast({ title: "Outreach Package Created", description: "Moved to queue for generation." });
@@ -40,7 +40,7 @@ export default function ProspectDetail() {
     return <div className="p-8 text-center text-muted-foreground">Prospect not found.</div>;
   }
 
-  const { person, company, events, behavioralTrail, researchAssessment, outreachPackage } = detail;
+  const { person, company, events, behavioralTrail, researchAssessment, gtmSignal } = detail;
 
   const getPriorityColor = (p: string) => {
     switch (p) {
@@ -86,7 +86,7 @@ export default function ProspectDetail() {
             <Badge variant="outline" className={getPriorityColor(researchAssessment.outreachPriority)}>
               {researchAssessment.outreachPriority} Priority
             </Badge>
-            {!outreachPackage ? (
+            {!gtmSignal ? (
               <Button 
                 onClick={() => createPackage.mutate({ data: { personId: person.id } })}
                 disabled={createPackage.isPending || researchAssessment.outreachPriority === "Suppress"}

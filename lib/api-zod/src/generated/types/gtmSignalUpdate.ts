@@ -5,9 +5,8 @@
  * Synthetic GTM Signal Engine API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { GtmSignalStatus } from './gtmSignalStatus';
 
-export interface AttioNotePayload {
-  parentObject: string;
-  title: string;
-  content: string;
+export interface GtmSignalUpdate {
+  status: GtmSignalStatus;
 }

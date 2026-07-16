@@ -5,12 +5,11 @@
  * Synthetic GTM Signal Engine API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { AttioCompanyPayload } from './attioCompanyPayload';
-import type { AttioNotePayload } from './attioNotePayload';
-import type { AttioPersonPayload } from './attioPersonPayload';
+import type { AttioRecordPayload } from './attioRecordPayload';
 
 export interface AttioExportPreview {
-  company: AttioCompanyPayload;
-  person: AttioPersonPayload;
-  note: AttioNotePayload;
+  company: AttioRecordPayload;
+  person: AttioRecordPayload;
+  gtmSignal: AttioRecordPayload;
+  generativeEmail?: AttioRecordPayload | null;
 }

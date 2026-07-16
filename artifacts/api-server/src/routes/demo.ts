@@ -57,7 +57,7 @@ router.post("/demo/generate-prospect", async (req, res): Promise<void> => {
     events,
     behavioralTrail,
     researchAssessment,
-    outreachPackage: null,
+    gtmSignal: null,
   });
   res.status(201).json(data);
 });

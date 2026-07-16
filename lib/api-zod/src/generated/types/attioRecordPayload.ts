@@ -5,9 +5,9 @@
  * Synthetic GTM Signal Engine API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { AttioCompanyPayloadValues } from './attioCompanyPayloadValues';
+import type { AttioRecordPayloadValues } from './attioRecordPayloadValues';
 
-export interface AttioCompanyPayload {
+export interface AttioRecordPayload {
   objectSlug: string;
-  values: AttioCompanyPayloadValues;
+  values: AttioRecordPayloadValues;
 }

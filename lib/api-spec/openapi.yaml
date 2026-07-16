@@ -16,8 +16,8 @@ tags:
     description: Prospect list and detail
   - name: hypotheses
     description: Growth hypothesis versions
-  - name: outreach
-    description: Outreach package queue and Attio export
+  - name: gtm-signals
+    description: GTM Signal queue and Attio export
   - name: demo
     description: Demo data controls
 paths:
@@ -73,7 +73,7 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/OutreachStatus"
+            $ref: "#/components/schemas/GtmSignalStatus"
         - name: eventType
           in: query
           required: false
@@ -185,43 +185,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/GrowthHypothesis"
 
-  /outreach-packages:
+  /gtm-signals:
     get:
-      operationId: listOutreachPackages
-      tags: [outreach]
-      summary: List outreach packages (queue)
+      operationId: listGtmSignals
+      tags: [gtm-signals]
+      summary: List GTM signals (queue)
       parameters:
         - name: status
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/OutreachStatus"
+            $ref: "#/components/schemas/GtmSignalStatus"
       responses:
         "200":
-          description: List of outreach packages
+          description: List of GTM signals
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/OutreachPackageListItem"
+                  $ref: "#/components/schemas/GtmSignalListItem"
     post:
-      operationId: createOutreachPackage
-      tags: [outreach]
-      summary: Create an outreach package for a high/medium priority prospect
+      operationId: createGtmSignal
+      tags: [gtm-signals]
+      summary: Create a GTM signal for a high/medium priority prospect
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/OutreachPackageInput"
+              $ref: "#/components/schemas/GtmSignalInput"
       responses:
         "201":
-          description: Created outreach package
+          description: Created GTM signal
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutreachPackage"
+                $ref: "#/components/schemas/GtmSignal"
         "400":
           description: Invalid request
           content:
@@ -229,11 +229,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /outreach-packages/{id}:
+  /gtm-signals/{id}:
     get:
-      operationId: getOutreachPackage
-      tags: [outreach]
-      summary: Get an outreach package by id
+      operationId: getGtmSignal
+      tags: [gtm-signals]
+      summary: Get a GTM signal by id
       parameters:
         - name: id
           in: path
@@ -242,11 +242,11 @@ paths:
             type: integer
       responses:
         "200":
-          description: Outreach package
+          description: GTM signal
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutreachPackage"
+                $ref: "#/components/schemas/GtmSignal"
         "404":
           description: Not found
           content:
@@ -254,9 +254,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     patch:
-      operationId: updateOutreachPackage
-      tags: [outreach]
-      summary: Update the status of an outreach package
+      operationId: updateGtmSignal
+      tags: [gtm-signals]
+      summary: Update the status of a GTM signal
       parameters:
         - name: id
           in: path
@@ -268,14 +268,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/OutreachPackageUpdate"
+              $ref: "#/components/schemas/GtmSignalUpdate"
       responses:
         "200":
-          description: Updated outreach package
+          description: Updated GTM signal
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutreachPackage"
+                $ref: "#/components/schemas/GtmSignal"
         "404":
           description: Not found
           content:
@@ -283,11 +283,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /outreach-packages/{id}/attio-sync:
+  /gtm-signals/{id}/attio-sync:
     post:
-      operationId: syncOutreachPackageToAttio
-      tags: [outreach]
-      summary: Push this outreach package's company, person, and note to the connected Attio workspace
+      operationId: syncGtmSignalToAttio
+      tags: [gtm-signals]
+      summary: >-
+        Push this GTM signal's Company, Person, GTM Signal record, Generative AI
+        Email record, and List entry to the connected Attio workspace
       parameters:
         - name: id
           in: path
@@ -296,11 +298,11 @@ paths:
             type: integer
       responses:
         "200":
-          description: Updated outreach package with sync result
+          description: Updated GTM signal with sync result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutreachPackage"
+                $ref: "#/components/schemas/GtmSignal"
         "404":
           description: Not found
           content:
@@ -312,16 +314,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutreachPackage"
+                $ref: "#/components/schemas/GtmSignal"
 
-  /outreach-packages/{id}/generate:
+  /gtm-signals/{id}/generate:
     post:
-      operationId: generateOutreachPackageContent
-      tags: [outreach]
+      operationId: generateGtmSignalContent
+      tags: [gtm-signals]
       summary: >-
-        Generate (or regenerate) this package's outreach angle, research summary, and
-        draft outreach email using a real LLM call over the behavioral trail and company
-        context. Moves the package to "Needs Review" on success.
+        Generate (or regenerate) this signal's outreach angle, research notes,
+        and draft email using a real LLM call. Moves the signal to "Needs Review"
+        on success and creates a new Generative AI Email row.
       parameters:
         - name: id
           in: path
@@ -330,11 +332,11 @@ paths:
             type: integer
       responses:
         "200":
-          description: Updated outreach package with generated content
+          description: Updated GTM signal with generated content
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutreachPackage"
+                $ref: "#/components/schemas/GtmSignal"
         "404":
           description: Not found
           content:
@@ -346,13 +348,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OutreachPackage"
+                $ref: "#/components/schemas/GtmSignal"
 
-  /outreach-packages/{id}/attio-export:
+  /gtm-signals/{id}/attio-export:
     get:
       operationId: getAttioExportPreview
-      tags: [outreach]
-      summary: Get Attio-compatible export payload previews for a package
+      tags: [gtm-signals]
+      summary: Get Attio-compatible export payload previews for a GTM signal
       parameters:
         - name: id
           in: path
@@ -526,7 +528,7 @@ components:
       type: string
       enum: [High, Medium, Low, Suppress]
 
-    OutreachStatus:
+    GtmSignalStatus:
       type: string
       enum:
         - Researching
@@ -853,7 +855,7 @@ components:
         - events
         - behavioralTrail
         - researchAssessment
-        - outreachPackage
+        - gtmSignal
       properties:
         person:
           $ref: "#/components/schemas/Person"
@@ -867,22 +869,21 @@ components:
           $ref: "#/components/schemas/BehavioralTrail"
         researchAssessment:
           $ref: "#/components/schemas/ResearchAssessment"
-        outreachPackage:
+        gtmSignal:
           oneOf:
-            - $ref: "#/components/schemas/OutreachPackage"
+            - $ref: "#/components/schemas/GtmSignal"
             - type: "null"
 
-    OutreachPackage:
+    GtmSignal:
       type: object
       required:
         - id
         - personId
         - companyId
-        - campaign
         - sourceSignal
         - behavioralTrail
         - behaviorSummary
-        - researchSummary
+        - researchNotes
         - outreachAngle
         - hypothesisVersion
         - promptVersion
@@ -891,7 +892,7 @@ components:
         - attioSyncStatus
         - attioCompanyRecordId
         - attioPersonRecordId
-        - attioNoteId
+        - attioGtmSignalRecordId
         - attioPersonWebUrl
         - attioSyncError
         - attioSyncedAt
@@ -900,53 +901,36 @@ components:
         - agentConfidence
         - outreachEmailSubject
         - outreachEmailBody
+        - authProblemAngle
         - createdAt
       properties:
         id: { type: integer }
         personId: { type: integer }
         companyId: { type: integer }
-        campaign: { type: string }
         sourceSignal: { type: string }
         behavioralTrail:
           type: array
           items: { type: string }
         behaviorSummary: { type: string }
-        researchSummary: { type: string }
+        researchNotes: { type: string }
+        authProblemAngle: { type: ["string", "null"] }
         outreachAngle: { type: string }
         hypothesisVersion: { type: string }
         promptVersion: { type: string }
         status:
-          $ref: "#/components/schemas/OutreachStatus"
+          $ref: "#/components/schemas/GtmSignalStatus"
         exportedToAttio: { type: boolean }
         attioSyncStatus:
           $ref: "#/components/schemas/AttioSyncStatus"
-        attioCompanyRecordId:
-          oneOf:
-            - type: string
-            - type: "null"
-        attioPersonRecordId:
-          oneOf:
-            - type: string
-            - type: "null"
-        attioNoteId:
-          oneOf:
-            - type: string
-            - type: "null"
-        attioPersonWebUrl:
-          oneOf:
-            - type: string
-            - type: "null"
-        attioSyncError:
-          oneOf:
-            - type: string
-            - type: "null"
+        attioCompanyRecordId: { type: ["string", "null"] }
+        attioPersonRecordId: { type: ["string", "null"] }
+        attioGtmSignalRecordId: { type: ["string", "null"] }
+        attioPersonWebUrl: { type: ["string", "null"] }
+        attioSyncError: { type: ["string", "null"] }
         attioSyncedAt: { type: ["string", "null"], format: date-time }
         generationStatus:
           $ref: "#/components/schemas/GenerationStatus"
-        generationError:
-          oneOf:
-            - type: string
-            - type: "null"
+        generationError: { type: ["string", "null"] }
         agentConfidence:
           oneOf:
             - $ref: "#/components/schemas/AgentConfidence"
@@ -955,19 +939,7 @@ components:
         outreachEmailBody: { type: string }
         createdAt: { type: string, format: date-time }
 
-    AttioSyncStatus:
-      type: string
-      enum: [not_synced, synced, error]
-
-    GenerationStatus:
-      type: string
-      enum: [pending, generated, failed]
-
-    AgentConfidence:
-      type: string
-      enum: [low, medium, high]
-
-    OutreachPackageListItem:
+    GtmSignalListItem:
       type: object
       required:
         - id
@@ -996,7 +968,7 @@ components:
           $ref: "#/components/schemas/OutreachPriority"
         outreachAngle: { type: string }
         status:
-          $ref: "#/components/schemas/OutreachStatus"
+          $ref: "#/components/schemas/GtmSignalStatus"
         attioSyncStatus:
           $ref: "#/components/schemas/AttioSyncStatus"
         generationStatus:
@@ -1015,21 +987,32 @@ components:
             - type: "null"
         createdAt: { type: string, format: date-time }
 
-    OutreachPackageInput:
+    GtmSignalInput:
       type: object
       required: [personId]
       properties:
         personId: { type: integer }
-        campaign: { type: string }
 
-    OutreachPackageUpdate:
+    GtmSignalUpdate:
       type: object
       required: [status]
       properties:
         status:
-          $ref: "#/components/schemas/OutreachStatus"
+          $ref: "#/components/schemas/GtmSignalStatus"
 
-    AttioCompanyPayload:
+    AttioSyncStatus:
+      type: string
+      enum: [not_synced, synced, error]
+
+    GenerationStatus:
+      type: string
+      enum: [pending, generated, failed]
+
+    AgentConfidence:
+      type: string
+      enum: [low, medium, high]
+
+    AttioRecordPayload:
       type: object
       required: [objectSlug, values]
       properties:
@@ -1037,34 +1020,21 @@ components:
         values:
           type: object
           additionalProperties: true
-
-    AttioPersonPayload:
-      type: object
-      required: [objectSlug, values]
-      properties:
-        objectSlug: { type: string }
-        values:
-          type: object
-          additionalProperties: true
-
-    AttioNotePayload:
-      type: object
-      required: [parentObject, title, content]
-      properties:
-        parentObject: { type: string }
-        title: { type: string }
-        content: { type: string }
 
     AttioExportPreview:
       type: object
-      required: [company, person, note]
+      required: [company, person, gtmSignal]
       properties:
         company:
-          $ref: "#/components/schemas/AttioCompanyPayload"
+          $ref: "#/components/schemas/AttioRecordPayload"
         person:
-          $ref: "#/components/schemas/AttioPersonPayload"
-        note:
-          $ref: "#/components/schemas/AttioNotePayload"
+          $ref: "#/components/schemas/AttioRecordPayload"
+        gtmSignal:
+          $ref: "#/components/schemas/AttioRecordPayload"
+        generativeEmail:
+          oneOf:
+            - $ref: "#/components/schemas/AttioRecordPayload"
+            - type: "null"
 
     DashboardSummary:
       type: object

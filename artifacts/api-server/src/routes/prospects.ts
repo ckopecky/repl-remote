@@ -7,7 +7,7 @@ import {
   productEventsTable,
   behavioralTrailsTable,
   researchAssessmentsTable,
-  outreachPackagesTable,
+  gtmSignalsTable,
 } from "@workspace/db";
 import {
   ListProspectsQueryParams,
@@ -39,7 +39,7 @@ router.get("/prospects", async (req, res): Promise<void> => {
   if (priority) conditions.push(eq(researchAssessmentsTable.outreachPriority, priority));
   if (archetype) conditions.push(eq(peopleTable.archetype, archetype));
   if (department) conditions.push(eq(peopleTable.department, department));
-  if (status) conditions.push(eq(outreachPackagesTable.status, status));
+  if (status) conditions.push(eq(gtmSignalsTable.status, status));
   if (eventType) {
     conditions.push(
       sql`exists (select 1 from ${productEventsTable} pe where pe.person_id = ${peopleTable.id} and pe.event_name = ${eventType})`,
@@ -75,7 +75,7 @@ router.get("/prospects", async (req, res): Promise<void> => {
       enterpriseIntentScore: researchAssessmentsTable.enterpriseIntentScore,
       churnRiskScore: researchAssessmentsTable.churnRiskScore,
       outreachPriority: researchAssessmentsTable.outreachPriority,
-      outreachStatus: outreachPackagesTable.status,
+      outreachStatus: gtmSignalsTable.status,
       triggeredEventTypes: sql<string[]>`coalesce((
         select array_agg(distinct pe.event_name)
         from ${productEventsTable} pe
@@ -85,7 +85,7 @@ router.get("/prospects", async (req, res): Promise<void> => {
     .from(peopleTable)
     .innerJoin(companiesTable, eq(peopleTable.companyId, companiesTable.id))
     .innerJoin(researchAssessmentsTable, eq(researchAssessmentsTable.personId, peopleTable.id))
-    .leftJoin(outreachPackagesTable, eq(outreachPackagesTable.personId, peopleTable.id))
+    .leftJoin(gtmSignalsTable, eq(gtmSignalsTable.personId, peopleTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(orderFn(orderColumn));
 
@@ -115,7 +115,7 @@ router.get("/prospects/:personId", async (req, res): Promise<void> => {
     return;
   }
 
-  const [events, [behavioralTrail], [researchAssessment], [outreachPackage]] = await Promise.all([
+  const [events, [behavioralTrail], [researchAssessment], [gtmSignal]] = await Promise.all([
     db
       .select()
       .from(productEventsTable)
@@ -125,9 +125,9 @@ router.get("/prospects/:personId", async (req, res): Promise<void> => {
     db.select().from(researchAssessmentsTable).where(eq(researchAssessmentsTable.personId, personId)),
     db
       .select()
-      .from(outreachPackagesTable)
-      .where(eq(outreachPackagesTable.personId, personId))
-      .orderBy(desc(outreachPackagesTable.createdAt))
+      .from(gtmSignalsTable)
+      .where(eq(gtmSignalsTable.personId, personId))
+      .orderBy(desc(gtmSignalsTable.createdAt))
       .limit(1),
   ]);
 
@@ -143,7 +143,7 @@ router.get("/prospects/:personId", async (req, res): Promise<void> => {
     events,
     behavioralTrail,
     researchAssessment,
-    outreachPackage: outreachPackage ?? null,
+    gtmSignal: gtmSignal ?? null,
   });
   res.json(data);
 });

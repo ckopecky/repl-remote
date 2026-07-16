@@ -245,6 +245,62 @@ Read `references/email-voice.md` before writing. Frame by PostHog state:
 | Account, no app | Honest question — "what got in the way?" Every answer is useful |
 | Account + app | Product feedback — what are you building, how's it going, where's the friction |
 
+#### Email generation guidelines
+
+**Voice — sound like this:**
+> "You can probably start with basic auth for now, but once you add teams, roles, org switching, or SSO, this becomes product infrastructure. That's usually where Clerk starts making sense."
+
+**Not like this:**
+> "Clerk is the best-in-class authentication solution for seamless user management."
+
+Tone is experienced, candid, and practical — a senior dev talking to another senior dev. Avoid sales language. Ask practical engineering questions. Frame in Next.js/Vercel terms whenever the stack warrants it.
+
+**Every email must derive from the "Why Clerk" hypothesis — never from a generic funding congratulations.** The hook is always the specific auth complexity that is shaping up for this company, not that they raised money.
+
+Example angle:
+> "Saw the round — if you're moving toward team workspaces, auth tends to get messy around invites, roles, and org switching. Clerk might save you from building that layer yourself."
+
+---
+
+**Auth problem angle → campaign type mapping**
+
+Use this table to select the campaign angle that corresponds to the `auth_problem_angle_6` assigned in Step 4. The campaign type informs the email's opening frame and subject line:
+
+| Auth Problem Angle | Campaign Type | Core hook |
+|---|---|---|
+| Activation Stalled | `activation_stalled` | "Auth got annoying — what specifically?" |
+| Multi-Tenancy & Orgs | `multi_tenancy_orgs` | Teams, workspaces, invites, org switching |
+| Enterprise SSO/SAML | `enterprise_sso` | Enterprise buyer is asking for SSO |
+| DIY Auth Replacement | `developer_platform` | Custom auth is becoming a product tax |
+| Legacy Provider Migration | `developer_platform` | Auth0 / Firebase / Cognito / Supabase pain |
+| Agentic/Service Auth | `ai_workspace` | AI agents, API tokens, human + machine access |
+| B2C Scale Auth | `funding_congrats` | Consumer growth, sessions, onboarding |
+| Compliance (BAA/HIPAA) | `compliance` | Healthcare or BAA/HIPAA needs |
+
+---
+
+**Personalization tokens — always populate before writing the email**
+
+Before drafting, identify each token explicitly. These drive specificity; a missing token is a generic email.
+
+| Token | What to fill in |
+|---|---|
+| `companyName` | Company name as it appears on their site / Attio |
+| `founderName` | First name of the person being emailed |
+| `fundingSignal` | Round, amount, date — only if verified (cross-check the batch row against public sources) |
+| `productSignal` | What they are building and where it is headed |
+| `authPainHypothesis` | The specific auth problem implied by their stage and product direction — this is the email's reason for existing |
+
+Write the `authPainHypothesis` last, from the combination of the other tokens. It should be one concrete sentence: what auth complexity is coming, and why it matters for this specific build.
+
+---
+
+**Routing gate — only send when all three hold true:**
+
+1. Decision is `reach_out_now`
+2. Email is verified (not guessed, not a role address)
+3. No duplicate suppression hit (person not already in pipeline for active outreach)
+
 **Sender — round-robin, state persisted across sessions:**
 
 Senders in rotation order:

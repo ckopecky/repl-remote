@@ -7,7 +7,7 @@
  */
 import type { BehavioralTrail } from './behavioralTrail';
 import type { Company } from './company';
-import type { OutreachPackage } from './outreachPackage';
+import type { GtmSignal } from './gtmSignal';
 import type { Person } from './person';
 import type { ProductEvent } from './productEvent';
 import type { ResearchAssessment } from './researchAssessment';
@@ -18,5 +18,5 @@ export interface ProspectDetail {
   events: ProductEvent[];
   behavioralTrail: BehavioralTrail;
   researchAssessment: ResearchAssessment;
-  outreachPackage: OutreachPackage | null;
+  gtmSignal: GtmSignal | null;
 }

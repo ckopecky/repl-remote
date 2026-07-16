@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListOutreachPackages, useUpdateOutreachPackage, useGetAttioExportPreview, useSyncOutreachPackageToAttio, useGenerateOutreachPackageContent } from "@workspace/api-client-react";
+import { useListGtmSignals, useUpdateGtmSignal, useGetAttioExportPreview, useSyncGtmSignalToAttio, useGenerateGtmSignalContent } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,18 +8,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Send, FileJson, Check, X, ExternalLink, AlertTriangle, RefreshCw, CloudUpload, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { OutreachStatus } from "@workspace/api-client-react";
+import { GtmSignalStatus } from "@workspace/api-client-react";
 
 export default function OutreachQueue() {
   const { toast } = useToast();
   const [filter, setFilter] = useState<string>("all");
   const [previewId, setPreviewId] = useState<number | null>(null);
 
-  const { data: packages, isLoading } = useListOutreachPackages({
+  const { data: packages, isLoading } = useListGtmSignals({
     status: filter !== "all" ? filter as any : undefined
   });
 
-  const updateMut = useUpdateOutreachPackage({
+  const updateMut = useUpdateGtmSignal({
     mutation: {
       onSuccess: (data: any) => {
         if (data?.status === "Sent" && data?.attioSyncStatus === "synced") {
@@ -34,7 +34,7 @@ export default function OutreachQueue() {
     }
   });
 
-  const syncMut = useSyncOutreachPackageToAttio({
+  const syncMut = useSyncGtmSignalToAttio({
     mutation: {
       onSuccess: (data: any) => {
         if (data?.attioSyncStatus === "synced") {
@@ -47,7 +47,7 @@ export default function OutreachQueue() {
     }
   });
 
-  const generateMut = useGenerateOutreachPackageContent({
+  const generateMut = useGenerateGtmSignalContent({
     mutation: {
       onSuccess: (data: any) => {
         if (data?.generationStatus === "generated") {
@@ -191,28 +191,28 @@ export default function OutreachQueue() {
                           </Button>
                         )}
 
-                        {pkg.status === OutreachStatus.Needs_Review && (
+                        {pkg.status === GtmSignalStatus.Needs_Review && (
                           <>
                             <Button 
                               variant="outline" size="sm" className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                              onClick={() => updateMut.mutate({ id: pkg.id, data: { status: OutreachStatus.Approved } })}
+                              onClick={() => updateMut.mutate({ id: pkg.id, data: { status: GtmSignalStatus.Approved } })}
                             >
                               <Check className="w-4 h-4" />
                             </Button>
                             <Button 
                               variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => updateMut.mutate({ id: pkg.id, data: { status: OutreachStatus.Rejected } })}
+                              onClick={() => updateMut.mutate({ id: pkg.id, data: { status: GtmSignalStatus.Rejected } })}
                             >
                               <X className="w-4 h-4" />
                             </Button>
                           </>
                         )}
                         
-                        {(pkg.status === OutreachStatus.Approved || pkg.status === OutreachStatus.Generated) && (
+                        {(pkg.status === GtmSignalStatus.Approved || pkg.status === GtmSignalStatus.Generated) && (
                           <Button 
                             variant="default" size="sm" className="h-8"
                             disabled={updateMut.isPending}
-                            onClick={() => updateMut.mutate({ id: pkg.id, data: { status: OutreachStatus.Sent } })}
+                            onClick={() => updateMut.mutate({ id: pkg.id, data: { status: GtmSignalStatus.Sent } })}
                           >
                             <CloudUpload className="w-4 h-4 mr-1.5" />
                             Send &amp; Sync to Attio

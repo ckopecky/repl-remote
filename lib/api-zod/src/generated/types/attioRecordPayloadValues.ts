@@ -6,4 +6,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AttioCompanyPayloadValues = { [key: string]: unknown };
+export type AttioRecordPayloadValues = { [key: string]: unknown };

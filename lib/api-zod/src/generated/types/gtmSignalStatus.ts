@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type OutreachStatus = typeof OutreachStatus[keyof typeof OutreachStatus];
+export type GtmSignalStatus = typeof GtmSignalStatus[keyof typeof GtmSignalStatus];
 
 
-export const OutreachStatus = {
+export const GtmSignalStatus = {
   Researching: 'Researching',
   Ready_for_Generation: 'Ready for Generation',
   Generated: 'Generated',

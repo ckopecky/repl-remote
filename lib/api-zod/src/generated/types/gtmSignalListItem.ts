@@ -7,10 +7,10 @@
  */
 import type { AttioSyncStatus } from './attioSyncStatus';
 import type { GenerationStatus } from './generationStatus';
+import type { GtmSignalStatus } from './gtmSignalStatus';
 import type { OutreachPriority } from './outreachPriority';
-import type { OutreachStatus } from './outreachStatus';
 
-export interface OutreachPackageListItem {
+export interface GtmSignalListItem {
   id: number;
   personId: number;
   personName: string;
@@ -19,7 +19,7 @@ export interface OutreachPackageListItem {
   sourceSignal: string;
   outreachPriority: OutreachPriority;
   outreachAngle: string;
-  status: OutreachStatus;
+  status: GtmSignalStatus;
   attioSyncStatus: AttioSyncStatus;
   generationStatus: GenerationStatus;
   generationError: string | null;

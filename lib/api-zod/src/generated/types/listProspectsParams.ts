@@ -6,16 +6,16 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Archetype } from './archetype';
+import type { GtmSignalStatus } from './gtmSignalStatus';
 import type { ListProspectsSortBy } from './listProspectsSortBy';
 import type { ListProspectsSortDir } from './listProspectsSortDir';
 import type { OutreachPriority } from './outreachPriority';
-import type { OutreachStatus } from './outreachStatus';
 
 export type ListProspectsParams = {
 priority?: OutreachPriority;
 archetype?: Archetype;
 department?: string;
-status?: OutreachStatus;
+status?: GtmSignalStatus;
 /**
  * Filter to prospects who have triggered at least one event of this type.
  */

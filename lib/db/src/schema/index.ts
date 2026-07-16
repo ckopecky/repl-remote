@@ -4,4 +4,5 @@ export * from "./productEvents";
 export * from "./behavioralTrails";
 export * from "./growthHypotheses";
 export * from "./researchAssessments";
-export * from "./outreachPackages";
+export * from "./gtmSignals";
+export * from "./generativeAiEmails";

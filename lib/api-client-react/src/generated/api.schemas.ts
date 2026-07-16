@@ -41,10 +41,10 @@ export const OutreachPriority = {
   Suppress: 'Suppress',
 } as const;
 
-export type OutreachStatus = typeof OutreachStatus[keyof typeof OutreachStatus];
+export type GtmSignalStatus = typeof GtmSignalStatus[keyof typeof GtmSignalStatus];
 
 
-export const OutreachStatus = {
+export const GtmSignalStatus = {
   Researching: 'Researching',
   Ready_for_Generation: 'Ready for Generation',
   Generated: 'Generated',
@@ -251,29 +251,36 @@ export const AgentConfidence = {
   high: 'high',
 } as const;
 
-export interface OutreachPackage {
+export interface GtmSignal {
   id: number;
   personId: number;
   companyId: number;
-  campaign: string;
   sourceSignal: string;
   behavioralTrail: string[];
   behaviorSummary: string;
-  researchSummary: string;
+  researchNotes: string;
+  /** @nullable */
+  authProblemAngle: string | null;
   outreachAngle: string;
   hypothesisVersion: string;
   promptVersion: string;
-  status: OutreachStatus;
+  status: GtmSignalStatus;
   exportedToAttio: boolean;
   attioSyncStatus: AttioSyncStatus;
+  /** @nullable */
   attioCompanyRecordId: string | null;
+  /** @nullable */
   attioPersonRecordId: string | null;
-  attioNoteId: string | null;
+  /** @nullable */
+  attioGtmSignalRecordId: string | null;
+  /** @nullable */
   attioPersonWebUrl: string | null;
+  /** @nullable */
   attioSyncError: string | null;
   /** @nullable */
   attioSyncedAt: string | null;
   generationStatus: GenerationStatus;
+  /** @nullable */
   generationError: string | null;
   agentConfidence: AgentConfidence | null;
   outreachEmailSubject: string;
@@ -287,10 +294,10 @@ export interface ProspectDetail {
   events: ProductEvent[];
   behavioralTrail: BehavioralTrail;
   researchAssessment: ResearchAssessment;
-  outreachPackage: OutreachPackage | null;
+  gtmSignal: GtmSignal | null;
 }
 
-export interface OutreachPackageListItem {
+export interface GtmSignalListItem {
   id: number;
   personId: number;
   personName: string;
@@ -299,7 +306,7 @@ export interface OutreachPackageListItem {
   sourceSignal: string;
   outreachPriority: OutreachPriority;
   outreachAngle: string;
-  status: OutreachStatus;
+  status: GtmSignalStatus;
   attioSyncStatus: AttioSyncStatus;
   generationStatus: GenerationStatus;
   generationError: string | null;
@@ -308,39 +315,26 @@ export interface OutreachPackageListItem {
   createdAt: string;
 }
 
-export interface OutreachPackageInput {
+export interface GtmSignalInput {
   personId: number;
-  campaign?: string;
 }
 
-export interface OutreachPackageUpdate {
-  status: OutreachStatus;
+export interface GtmSignalUpdate {
+  status: GtmSignalStatus;
 }
 
-export type AttioCompanyPayloadValues = { [key: string]: unknown };
+export type AttioRecordPayloadValues = { [key: string]: unknown };
 
-export interface AttioCompanyPayload {
+export interface AttioRecordPayload {
   objectSlug: string;
-  values: AttioCompanyPayloadValues;
-}
-
-export type AttioPersonPayloadValues = { [key: string]: unknown };
-
-export interface AttioPersonPayload {
-  objectSlug: string;
-  values: AttioPersonPayloadValues;
-}
-
-export interface AttioNotePayload {
-  parentObject: string;
-  title: string;
-  content: string;
+  values: AttioRecordPayloadValues;
 }
 
 export interface AttioExportPreview {
-  company: AttioCompanyPayload;
-  person: AttioPersonPayload;
-  note: AttioNotePayload;
+  company: AttioRecordPayload;
+  person: AttioRecordPayload;
+  gtmSignal: AttioRecordPayload;
+  generativeEmail?: AttioRecordPayload | null;
 }
 
 export interface DashboardSummary {
@@ -390,7 +384,7 @@ export type ListProspectsParams = {
 priority?: OutreachPriority;
 archetype?: Archetype;
 department?: string;
-status?: OutreachStatus;
+status?: GtmSignalStatus;
 /**
  * Filter to prospects who have triggered at least one event of this type.
  */
@@ -420,7 +414,7 @@ export const ListProspectsSortDir = {
   desc: 'desc',
 } as const;
 
-export type ListOutreachPackagesParams = {
-status?: OutreachStatus;
+export type ListGtmSignalsParams = {
+status?: GtmSignalStatus;
 };
 
