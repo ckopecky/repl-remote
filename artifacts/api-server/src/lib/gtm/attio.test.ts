@@ -517,109 +517,116 @@ describe("mapAuthProblemAngle — exact matches pass through unchanged", () => {
   );
 });
 
-describe("mapAuthProblemAngle — fuzzy near-miss mapping", () => {
-  it("maps 'SSO/SAML enterprise' (reordered) to 'enterprise SSO/SAML'", async () => {
-    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "SSO/SAML enterprise" });
+// ---------------------------------------------------------------------------
+// mapAuthProblemAngle — fuzzy near-miss mapping (table-driven)
+//
+// Near-miss strings are drawn directly from the prompt description text in
+// llm.ts so the test suite stays coupled to the actual prompt wording and
+// catches regressions when either the prompt or the keyword list changes.
+//
+// Each angle bucket has ≥ 3 near-miss strings. The final table section
+// covers completely unrelated strings that must always fall back to the
+// safe default "authentication".
+// ---------------------------------------------------------------------------
 
+describe("mapAuthProblemAngle — fuzzy near-miss mapping (table-driven)", () => {
+  // Helper: run a sync with a custom authProblemAngle and return the first
+  // auth_problem_angle value the GTM Signal was written with.
+  async function mapAngle(raw: string | null): Promise<string> {
+    vi.clearAllMocks();
+    mockUpsertAttioRecord
+      .mockResolvedValueOnce(makeAttioRecordResponse("company-record-id"))
+      .mockResolvedValueOnce(makeAttioRecordResponse("person-record-id"));
+    mockCreateAttioRecord.mockResolvedValue(makeAttioRecordResponse("new-record-id"));
+    mockPatchAttioRecord.mockResolvedValue(makeAttioRecordResponse("existing-record-id"));
+    mockCreateAttioListEntry.mockResolvedValue({ data: { id: { entry_id: "entry-1" } } });
+
+    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: raw });
     await syncGtmSignalToAttio({
       company: makeCompany(),
       person: makePerson(),
       gtmSignal: signal,
     });
 
-    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
-      "gtm_signals",
-      expect.objectContaining({ auth_problem_angle: ["enterprise SSO/SAML"] }),
+    const call = mockCreateAttioRecord.mock.calls.find(
+      ([slug]: [string]) => slug === "gtm_signals",
     );
-  });
+    expect(call).toBeDefined();
+    const [angle] = call![1].auth_problem_angle as string[];
+    return angle;
+  }
 
-  it("maps 'SAML provisioning' to 'enterprise SSO/SAML'", async () => {
-    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "SAML provisioning" });
+  // --- "enterprise SSO/SAML" near-misses (from prompt: SAML/OIDC SSO, SCIM provisioning,
+  //     directory sync, enterprise customers) ---
+  it.each([
+    // keyword: "sso"
+    ["SSO/SAML enterprise (reordered)", "SSO/SAML enterprise"],
+    // keyword: "saml"
+    ["SAML provisioning", "SAML provisioning"],
+    // keyword: "scim"  — drawn from "SCIM provisioning" in the prompt description
+    ["SCIM provisioning", "SCIM provisioning"],
+    // keyword: "enterprise"  — drawn from "enterprise customers" in the prompt description
+    ["enterprise directory sync", "enterprise directory sync"],
+  ] as [string, string][])(
+    "maps '%s' → 'enterprise SSO/SAML'",
+    async (_label, raw) => {
+      expect(await mapAngle(raw)).toBe("enterprise SSO/SAML");
+    },
+  );
 
-    await syncGtmSignalToAttio({
-      company: makeCompany(),
-      person: makePerson(),
-      gtmSignal: signal,
-    });
+  // --- "multi-tenancy & orgs" near-misses (from prompt: workspaces, teams, organizations,
+  //     permissions, member invites, role management) ---
+  it.each([
+    // keyword: "multi-tenant"
+    ["multi-tenant architecture", "multi-tenant architecture"],
+    // keyword: "org" (substring of "organizations")
+    ["org management", "org management"],
+    // keyword: "org" — drawn from "organizations" in the prompt description
+    ["organizations and workspaces", "organizations and workspaces"],
+    // keyword: "org" — drawn from "role management" context in the prompt
+    ["org-level role management", "org-level role management"],
+  ] as [string, string][])(
+    "maps '%s' → 'multi-tenancy & orgs'",
+    async (_label, raw) => {
+      expect(await mapAngle(raw)).toBe("multi-tenancy & orgs");
+    },
+  );
 
-    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
-      "gtm_signals",
-      expect.objectContaining({ auth_problem_angle: ["enterprise SSO/SAML"] }),
-    );
-  });
+  // --- "billing structure" near-misses (from prompt: subscription tiers, seat-based
+  //     pricing, entitlement gating) ---
+  it.each([
+    // keyword: "subscription" — drawn from "subscription tiers" in the prompt
+    ["subscription tiers", "subscription tiers"],
+    // keyword: "entitlement" — drawn from "entitlement gating" in the prompt
+    ["entitlement gating check", "entitlement gating check"],
+    // keyword: "billing"
+    ["billing integration layer", "billing integration layer"],
+    // keyword: "subscription" — drawn from "subscription entitlement" (combined near-miss)
+    ["subscription entitlement", "subscription entitlement"],
+  ] as [string, string][])(
+    "maps '%s' → 'billing structure'",
+    async (_label, raw) => {
+      expect(await mapAngle(raw)).toBe("billing structure");
+    },
+  );
 
-  it("maps 'multi-tenant architecture' to 'multi-tenancy & orgs'", async () => {
-    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "multi-tenant architecture" });
-
-    await syncGtmSignalToAttio({
-      company: makeCompany(),
-      person: makePerson(),
-      gtmSignal: signal,
-    });
-
-    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
-      "gtm_signals",
-      expect.objectContaining({ auth_problem_angle: ["multi-tenancy & orgs"] }),
-    );
-  });
-
-  it("maps 'org management' to 'multi-tenancy & orgs'", async () => {
-    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "org management" });
-
-    await syncGtmSignalToAttio({
-      company: makeCompany(),
-      person: makePerson(),
-      gtmSignal: signal,
-    });
-
-    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
-      "gtm_signals",
-      expect.objectContaining({ auth_problem_angle: ["multi-tenancy & orgs"] }),
-    );
-  });
-
-  it("maps 'subscription entitlement' to 'billing structure'", async () => {
-    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "subscription entitlement" });
-
-    await syncGtmSignalToAttio({
-      company: makeCompany(),
-      person: makePerson(),
-      gtmSignal: signal,
-    });
-
-    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
-      "gtm_signals",
-      expect.objectContaining({ auth_problem_angle: ["billing structure"] }),
-    );
-  });
-
-  it("maps 'identity management' (no keyword match) to the default 'authentication'", async () => {
-    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "identity management" });
-
-    await syncGtmSignalToAttio({
-      company: makeCompany(),
-      person: makePerson(),
-      gtmSignal: signal,
-    });
-
-    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
-      "gtm_signals",
-      expect.objectContaining({ auth_problem_angle: ["authentication"] }),
-    );
-  });
-
-  it("maps null authProblemAngle to the default 'authentication'", async () => {
-    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: null });
-
-    await syncGtmSignalToAttio({
-      company: makeCompany(),
-      person: makePerson(),
-      gtmSignal: signal,
-    });
-
-    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
-      "gtm_signals",
-      expect.objectContaining({ auth_problem_angle: ["authentication"] }),
-    );
-  });
+  // --- "authentication" fallback — completely unrelated strings with NO keyword match.
+  //     These are drawn from the "authentication" prompt description (MFA, passwordless,
+  //     social providers, sessions) which intentionally share no keywords with the other
+  //     three buckets, so they must always land on the safe default. ---
+  it.each([
+    // From prompt: "sign-up/login flows, sessions, MFA, social providers, or passwordless"
+    ["MFA setup (no bucket keyword)", "MFA setup"],
+    ["passwordless login flow (no bucket keyword)", "passwordless login flow"],
+    ["social provider integration (no bucket keyword)", "social provider integration"],
+    // Completely unrelated — no bucket keyword at all
+    ["totally unrelated string", "totally unrelated xyz string"],
+    // null / undefined inputs
+    ["null authProblemAngle", null],
+  ] as [string, string | null][])(
+    "maps '%s' → 'authentication' (safe default)",
+    async (_label, raw) => {
+      expect(await mapAngle(raw)).toBe("authentication");
+    },
+  );
 });
