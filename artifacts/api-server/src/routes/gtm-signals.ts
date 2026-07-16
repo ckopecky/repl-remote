@@ -363,6 +363,7 @@ async function runGeneration(gtmSignalId: number) {
             generationError: null,
             agentConfidence: result.content.confidence,
             outreachAngle: result.content.outreachAngle,
+            authProblemAngle: result.content.authProblemAngle,
             researchNotes: `${result.content.verdictReason} ${result.content.researchSummary}`,
             outreachEmailSubject: result.content.emailSubject,
             outreachEmailBody: result.content.emailBody,

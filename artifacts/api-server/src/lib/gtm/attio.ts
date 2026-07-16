@@ -112,6 +112,49 @@ function buildCompanyDescription(company: Company): string {
   return `${industry} · ${company.employeeCount} employees (${company.employeeRange}) · ${company.fundingStage}. ${company.growthSignal}.`;
 }
 
+/**
+ * The four valid `auth_problem_angle` select option titles in Attio, in
+ * priority order used by the fuzzy mapper below.
+ */
+const ATTIO_AUTH_ANGLES = [
+  "multi-tenancy & orgs",
+  "billing structure",
+  "authentication",
+  "enterprise SSO/SAML",
+] as const;
+
+type AttioAuthAngle = (typeof ATTIO_AUTH_ANGLES)[number];
+
+/**
+ * Maps a raw authProblemAngle string (as produced by the LLM) to the nearest
+ * valid Attio select option title. The LLM is instructed to return one of the
+ * four exact values, so an exact match is the common case. The fuzzy fallback
+ * handles minor variations (e.g. "SSO/SAML" → "enterprise SSO/SAML").
+ */
+function mapAuthProblemAngle(raw: string | null | undefined): AttioAuthAngle {
+  if (!raw) return "authentication";
+
+  const normalized = raw.toLowerCase().trim();
+
+  // Exact match first
+  const exact = ATTIO_AUTH_ANGLES.find((a) => a === normalized);
+  if (exact) return exact;
+
+  // Keyword-based fuzzy matching
+  if (normalized.includes("multi-tenant") || normalized.includes("org")) {
+    return "multi-tenancy & orgs";
+  }
+  if (normalized.includes("billing") || normalized.includes("subscription") || normalized.includes("entitlement")) {
+    return "billing structure";
+  }
+  if (normalized.includes("sso") || normalized.includes("saml") || normalized.includes("enterprise") || normalized.includes("scim")) {
+    return "enterprise SSO/SAML";
+  }
+
+  // Default to the most generic option
+  return "authentication";
+}
+
 function buildGtmSignalValues(gtmSignal: GtmSignal): Record<string, unknown> {
   return {
     gtm_signal_title: gtmSignal.sourceSignal,
@@ -123,8 +166,8 @@ function buildGtmSignalValues(gtmSignal: GtmSignal): Record<string, unknown> {
     // Attio attribute slug is `signal_summary`, not `research_notes`
     signal_summary: gtmSignal.researchNotes,
     // auth_problem_angle is a required multiselect in Attio — must be a non-empty array.
-    // Fall back to "authentication" when the field is not yet populated on this signal.
-    auth_problem_angle: [gtmSignal.authProblemAngle ?? "authentication"],
+    // Map the raw LLM string to one of the four valid Attio select option titles.
+    auth_problem_angle: [mapAuthProblemAngle(gtmSignal.authProblemAngle)],
     // signal_date is a date field (not timestamp) — send YYYY-MM-DD only
     signal_date: gtmSignal.createdAt.toISOString().slice(0, 10),
     // lifecycle_status is a required select in Attio; "Prospect" is the correct

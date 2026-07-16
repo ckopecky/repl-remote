@@ -66,6 +66,7 @@ export interface GeneratedOutreachContent {
   verdictReason: string;
   confidence: "low" | "medium" | "high";
   outreachAngle: string;
+  authProblemAngle: string;
   researchSummary: string;
   emailSubject: string;
   emailBody: string;
@@ -105,6 +106,7 @@ function validateContent(raw: unknown): GeneratedOutreachContent {
     "verdictReason",
     "confidence",
     "outreachAngle",
+    "authProblemAngle",
     "researchSummary",
     "emailSubject",
     "emailBody",
@@ -122,6 +124,7 @@ function validateContent(raw: unknown): GeneratedOutreachContent {
     verdictReason: (r.verdictReason as string).trim(),
     confidence,
     outreachAngle: (r.outreachAngle as string).trim(),
+    authProblemAngle: (r.authProblemAngle as string).trim(),
     researchSummary: (r.researchSummary as string).trim(),
     emailSubject: (r.emailSubject as string).trim(),
     emailBody: (r.emailBody as string).trim(),
@@ -180,6 +183,16 @@ Task: write a JSON object (and ONLY a JSON object, no other text) with exactly t
   and a clear moment all are.
 - "outreachAngle": one sentence naming the specific angle to lead with (not a generic
   category -- specific to this person/company).
+- "authProblemAngle": the primary auth infrastructure problem this prospect is likely facing,
+  expressed as one of exactly these four values (pick the closest fit):
+  "multi-tenancy & orgs" -- building a product where users belong to workspaces, teams, or
+    organizations; permissions, member invites, and role management are the core concern.
+  "billing structure" -- the auth layer must integrate tightly with subscription tiers,
+    seat-based pricing, or entitlement gating.
+  "authentication" -- core identity: sign-up/login flows, sessions, MFA, social providers,
+    or passwordless. The prospect hasn't yet hit org or enterprise complexity.
+  "enterprise SSO/SAML" -- enterprise customers are requiring SAML/OIDC SSO, SCIM
+    provisioning, or directory sync as a procurement condition.
 - "researchSummary": 2-4 sentences synthesizing who they are, what stage they're at, and
   why now (or why not yet) -- connect the company context and the trail, don't just list facts.
 - "emailSubject": per the voice rules.
