@@ -286,6 +286,8 @@ export interface GtmSignal {
   agentConfidence: AgentConfidence | null;
   outreachEmailSubject: string;
   outreachEmailBody: string;
+  /** @nullable */
+  rejectionFeedback: string | null;
   createdAt: string;
 }
 
@@ -315,6 +317,8 @@ export interface GtmSignalListItem {
   generationError: string | null;
   attioPersonWebUrl: string | null;
   attioSyncError: string | null;
+  /** @nullable */
+  rejectionFeedback: string | null;
   createdAt: string;
 }
 
@@ -324,6 +328,7 @@ export interface GtmSignalInput {
 
 export interface GtmSignalUpdate {
   status: GtmSignalStatus;
+  rejectionFeedback?: string;
 }
 
 export type AttioRecordPayloadValues = { [key: string]: unknown };

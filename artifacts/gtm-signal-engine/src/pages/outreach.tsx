@@ -3,10 +3,12 @@ import { useListGtmSignals, useUpdateGtmSignal, useGetAttioExportPreview, useSyn
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Send, FileJson, Check, X, ExternalLink, AlertTriangle, RefreshCw, CloudUpload, Sparkles } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Send, FileJson, Check, X, ExternalLink, AlertTriangle, RefreshCw, CloudUpload, Sparkles, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { GtmSignalStatus } from "@workspace/api-client-react";
 
@@ -14,6 +16,7 @@ export default function OutreachQueue() {
   const { toast } = useToast();
   const [filter, setFilter] = useState<string>("all");
   const [previewId, setPreviewId] = useState<number | null>(null);
+  const [rejectDialogId, setRejectDialogId] = useState<number | null>(null);
 
   const { data: packages, isLoading } = useListGtmSignals({
     status: filter !== "all" ? filter as any : undefined
@@ -26,6 +29,8 @@ export default function OutreachQueue() {
           toast({ title: "Sent and synced to Attio", description: "Company, person, and note were pushed to your workspace." });
         } else if (data?.status === "Sent" && data?.attioSyncStatus === "error") {
           toast({ title: "Marked Sent, but Attio sync failed", description: data.attioSyncError, variant: "destructive" });
+        } else if (data?.status === "Rejected") {
+          toast({ title: "Email rejected" });
         } else {
           toast({ title: "Status updated" });
         }
@@ -137,9 +142,20 @@ export default function OutreachQueue() {
                         <Badge variant="outline" className={getStatusColor(pkg.status)}>
                           {pkg.status}
                         </Badge>
-                        {(pkg as any).attioSyncStatus === "synced" && (pkg as any).attioPersonWebUrl && (
+                        {pkg.status === GtmSignalStatus.Rejected && pkg.rejectionFeedback && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1 cursor-default">
+                                <MessageSquare className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate max-w-[160px]">{pkg.rejectionFeedback}</span>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs whitespace-pre-wrap">{pkg.rejectionFeedback}</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {pkg.attioSyncStatus === "synced" && pkg.attioPersonWebUrl && (
                           <a
-                            href={(pkg as any).attioPersonWebUrl}
+                            href={pkg.attioPersonWebUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
@@ -147,24 +163,24 @@ export default function OutreachQueue() {
                             <CloudUpload className="w-3 h-3" /> Synced to Attio <ExternalLink className="w-3 h-3" />
                           </a>
                         )}
-                        {(pkg as any).attioSyncStatus === "error" && (
+                        {pkg.attioSyncStatus === "error" && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-xs text-destructive flex items-center gap-1 cursor-default">
                                 <AlertTriangle className="w-3 h-3" /> Attio sync failed
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">{(pkg as any).attioSyncError}</TooltipContent>
+                            <TooltipContent className="max-w-xs">{pkg.attioSyncError}</TooltipContent>
                           </Tooltip>
                         )}
-                        {(pkg as any).generationStatus === "failed" && (
+                        {pkg.generationStatus === "failed" && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-xs text-destructive flex items-center gap-1 cursor-default">
                                 <Sparkles className="w-3 h-3" /> Generation failed
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">{(pkg as any).generationError}</TooltipContent>
+                            <TooltipContent className="max-w-xs">{pkg.generationError}</TooltipContent>
                           </Tooltip>
                         )}
                       </div>
@@ -180,7 +196,7 @@ export default function OutreachQueue() {
                           Payload
                         </Button>
 
-                        {(pkg as any).generationStatus === "failed" && (
+                        {pkg.generationStatus === "failed" && (
                           <Button
                             variant="outline" size="sm" className="h-8"
                             disabled={generateMut.isPending}
@@ -191,7 +207,7 @@ export default function OutreachQueue() {
                           </Button>
                         )}
 
-                        {(pkg as any).attioSyncStatus === "error" && (
+                        {pkg.attioSyncStatus === "error" && (
                           <Button
                             variant="outline" size="sm" className="h-8"
                             disabled={syncMut.isPending}
@@ -223,7 +239,7 @@ export default function OutreachQueue() {
                             </Button>
                             <Button 
                               variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => updateMut.mutate({ id: pkg.id, data: { status: GtmSignalStatus.Rejected } })}
+                              onClick={() => setRejectDialogId(pkg.id)}
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -255,6 +271,21 @@ export default function OutreachQueue() {
         open={!!previewId} 
         onOpenChange={(v) => !v && setPreviewId(null)} 
       />
+
+      <RejectFeedbackDialog
+        id={rejectDialogId}
+        open={!!rejectDialogId}
+        onOpenChange={(v) => !v && setRejectDialogId(null)}
+        onConfirm={(feedback) => {
+          if (rejectDialogId == null) return;
+          updateMut.mutate({
+            id: rejectDialogId,
+            data: { status: GtmSignalStatus.Rejected, rejectionFeedback: feedback }
+          });
+          setRejectDialogId(null);
+        }}
+        isPending={updateMut.isPending}
+      />
     </div>
   );
 }
@@ -272,6 +303,77 @@ function AuthAngleBadge({ angle }: { angle: string }) {
     <Badge variant="outline" className={`text-[10px] font-medium whitespace-nowrap ${colorClass}`}>
       {angle}
     </Badge>
+  );
+}
+
+function RejectFeedbackDialog({
+  id,
+  open,
+  onOpenChange,
+  onConfirm,
+  isPending,
+}: {
+  id: number | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (feedback: string) => void;
+  isPending: boolean;
+}) {
+  const [feedback, setFeedback] = useState("");
+
+  // Reset feedback when dialog opens
+  const handleOpenChange = (v: boolean) => {
+    if (!v) setFeedback("");
+    onOpenChange(v);
+  };
+
+  const handleConfirm = () => {
+    onConfirm(feedback.trim());
+    setFeedback("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <X className="w-5 h-5 text-destructive" />
+            Reject Email
+          </DialogTitle>
+          <DialogDescription>
+            Optionally leave feedback on how this email could be improved. You can skip and reject anyway.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-2">
+          <Label htmlFor="rejection-feedback" className="text-sm font-medium mb-2 block">
+            Improvement feedback <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Textarea
+            id="rejection-feedback"
+            placeholder="e.g. Too generic — needs a hook specific to their recent funding round."
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            className="min-h-[100px] resize-none"
+            autoFocus
+          />
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            disabled={isPending}
+          >
+            <X className="w-4 h-4 mr-1.5" />
+            {feedback.trim() ? "Reject with feedback" : "Reject anyway"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

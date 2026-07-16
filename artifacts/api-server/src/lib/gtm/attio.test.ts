@@ -150,6 +150,7 @@ function makeGtmSignal(overrides?: Partial<GtmSignal>): GtmSignal {
     attioSyncedAt: null,
     generationStatus: "complete",
     generationError: null,
+    rejectionFeedback: null,
     createdAt: new Date("2024-01-15"),
     ...overrides,
   };

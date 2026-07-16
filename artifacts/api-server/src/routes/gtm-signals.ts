@@ -57,6 +57,7 @@ router.get("/gtm-signals", async (req, res): Promise<void> => {
       attioSyncError: gtmSignalsTable.attioSyncError,
       generationStatus: gtmSignalsTable.generationStatus,
       generationError: gtmSignalsTable.generationError,
+      rejectionFeedback: gtmSignalsTable.rejectionFeedback,
       createdAt: gtmSignalsTable.createdAt,
     })
     .from(gtmSignalsTable)
@@ -82,6 +83,7 @@ router.get("/gtm-signals", async (req, res): Promise<void> => {
     attioSyncError: r.attioSyncError,
     generationStatus: r.generationStatus,
     generationError: r.generationError,
+    rejectionFeedback: r.rejectionFeedback,
     createdAt: r.createdAt,
   }));
 
@@ -202,9 +204,14 @@ router.patch("/gtm-signals/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const updateFields: Record<string, unknown> = { status: parsed.data.status };
+  if (parsed.data.rejectionFeedback !== undefined) {
+    updateFields.rejectionFeedback = parsed.data.rejectionFeedback || null;
+  }
+
   const [updated] = await db
     .update(gtmSignalsTable)
-    .set({ status: parsed.data.status })
+    .set(updateFields)
     .where(eq(gtmSignalsTable.id, params.data.id))
     .returning();
   if (!updated) {

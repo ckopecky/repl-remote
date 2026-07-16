@@ -44,6 +44,7 @@ export const gtmSignalsTable = pgTable("gtm_signals", {
   attioSyncedAt: timestamp("attio_synced_at", { withTimezone: true }),
   generationStatus: text("generation_status").notNull().default("pending"),
   generationError: text("generation_error"),
+  rejectionFeedback: text("rejection_feedback"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

@@ -175,6 +175,7 @@ export const GetProspectDetailResponse = zod.object({
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
+  "rejectionFeedback": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 }),zod.null()])
 })
@@ -314,6 +315,7 @@ export const ListGtmSignalsResponseItem = zod.object({
   "generationError": zod.union([zod.string(),zod.null()]),
   "attioPersonWebUrl": zod.union([zod.string(),zod.null()]),
   "attioSyncError": zod.union([zod.string(),zod.null()]),
+  "rejectionFeedback": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 export const ListGtmSignalsResponse = zod.array(ListGtmSignalsResponseItem)
@@ -352,6 +354,7 @@ export const CreateGtmSignalResponse = zod.object({
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
+  "rejectionFeedback": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -389,6 +392,7 @@ export const GetGtmSignalResponse = zod.object({
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
+  "rejectionFeedback": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -401,7 +405,8 @@ export const UpdateGtmSignalParams = zod.object({
 })
 
 export const UpdateGtmSignalBody = zod.object({
-  "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied'])
+  "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
+  "rejectionFeedback": zod.string().optional()
 })
 
 export const UpdateGtmSignalResponse = zod.object({
@@ -430,6 +435,7 @@ export const UpdateGtmSignalResponse = zod.object({
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
+  "rejectionFeedback": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -467,6 +473,7 @@ export const SyncGtmSignalToAttioResponse = zod.object({
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
+  "rejectionFeedback": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -504,6 +511,7 @@ export const GenerateGtmSignalContentResponse = zod.object({
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
+  "rejectionFeedback": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -654,6 +662,7 @@ export const GenerateProspectResponse = zod.object({
   "agentConfidence": zod.union([zod.enum(['low', 'medium', 'high']),zod.null()]),
   "outreachEmailSubject": zod.string(),
   "outreachEmailBody": zod.string(),
+  "rejectionFeedback": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 }),zod.null()])
 })
