@@ -68,6 +68,8 @@ export function buildAttioExportPreview(input: {
   const generativeEmailPayload: AttioRecordPayload | null = generativeAiEmail
     ? {
         objectSlug: "generative_ai_emails",
+        // Note: gtm_signal (singular) and current_*_ref are added during real sync
+        // (they require record IDs from prior steps), so they are absent here.
         values: buildGenerativeEmailValues(generativeAiEmail),
       }
     : null;
@@ -114,10 +116,20 @@ function buildGtmSignalValues(gtmSignal: GtmSignal): Record<string, unknown> {
   return {
     gtm_signal_title: gtmSignal.sourceSignal,
     batch: gtmSignal.batch,
-    behavior_flow: gtmSignal.behavioralTrail,
-    research_notes: gtmSignal.researchNotes,
-    auth_problem_angle: gtmSignal.authProblemAngle ?? "",
-    signal_date: gtmSignal.createdAt.toISOString(),
+    // behavior_flow is a plain text field in Attio (not multiselect) — join the array
+    behavior_flow: Array.isArray(gtmSignal.behavioralTrail)
+      ? gtmSignal.behavioralTrail.join("\n")
+      : gtmSignal.behavioralTrail,
+    // Attio attribute slug is `signal_summary`, not `research_notes`
+    signal_summary: gtmSignal.researchNotes,
+    // auth_problem_angle is a required multiselect in Attio — must be a non-empty array.
+    // Fall back to "authentication" when the field is not yet populated on this signal.
+    auth_problem_angle: [gtmSignal.authProblemAngle ?? "authentication"],
+    // signal_date is a date field (not timestamp) — send YYYY-MM-DD only
+    signal_date: gtmSignal.createdAt.toISOString().slice(0, 10),
+    // lifecycle_status is a required select in Attio; "Prospect" is the correct
+    // option for all records synced from this tool.
+    lifecycle_status: "Prospect",
     synthetic_data: true,
   };
 }
@@ -128,10 +140,10 @@ function buildGenerativeEmailValues(
   return {
     subject: email.subject,
     body: email.body,
-    email_version: email.emailVersion,
+    // `email_version` does not exist in the Attio schema — omitted
     agent_confidence: email.agentConfidence ?? "low",
     synthetic_data: true,
-    outreach_status: "not started",
+    // outreach_status is omitted — Attio uses its configured default value.
   };
 }
 
@@ -202,8 +214,8 @@ export async function syncGtmSignalToAttio(input: {
     if (generativeAiEmail && generativeAiEmail.subject) {
       const emailRecord = await createAttioRecord("generative_ai_emails", {
         ...buildGenerativeEmailValues(generativeAiEmail),
-        // Link back to the GTM Signal
-        gtm_signals: [gtmSignalRecordId],
+        // Attio attribute slug is `gtm_signal` (singular, not multiselect)
+        gtm_signal: gtmSignalRecordId,
         current_person_ref: personRecordId,
         current_company_ref: companyRecordId,
       });
@@ -211,9 +223,10 @@ export async function syncGtmSignalToAttio(input: {
       logger.info({ emailRecordId }, "Attio: Generative AI Email record created");
     }
 
-    // 5. Add GTM Signal to the H2 FY26 Growth list
-    await createAttioListEntry(GTM_SIGNALS_LIST_ID, "gtm_signals", gtmSignalRecordId);
-    logger.info({ gtmSignalRecordId, listId: GTM_SIGNALS_LIST_ID }, "Attio: GTM Signal added to list");
+    // 5. Add the Person to the H2 FY26 Growth list.
+    // The list is configured with parent_object "people", so we add the person record.
+    await createAttioListEntry(GTM_SIGNALS_LIST_ID, "people", personRecordId);
+    logger.info({ personRecordId, listId: GTM_SIGNALS_LIST_ID }, "Attio: Person added to H2 FY26 Growth list");
 
     return {
       ok: true,

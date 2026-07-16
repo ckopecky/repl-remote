@@ -1,3 +1,4 @@
+- [Attio custom object sync quirks](attio-custom-object-sync.md) — attribute slug mismatches, list entry payload shape, select vs status field behavior, and list parent_object constraints for the gtm_signals/generative_ai_emails pipeline.
 - [Orval generated package deep imports](orval-deep-imports.md) — `@workspace/api-client-react` only exports its package root; deep-importing `/src/generated/...` breaks Vite even though the file exists.
 - [Calibrating synthetic scoring thresholds](synthetic-scoring-calibration.md) — when designing your own composite-score buckets for qualitative spec rules, sanity-check against a generated sample before shipping; averaging many partially-applicable signals dilutes scores below naive thresholds.
 - [Orval nullable date-time fields](orval-nullable-date-schema.md) — use `type: ["string","null"], format: date-time`, not `oneOf`, or generated Zod silently coerces null timestamps to epoch.

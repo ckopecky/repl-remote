@@ -317,7 +317,8 @@ export async function createAttioListEntry(
     method: "POST",
     body: {
       data: {
-        record: { object: objectSlug, record_id: recordId },
+        parent_object: objectSlug,
+        parent_record_id: recordId,
         entry_values: {},
       },
     },
