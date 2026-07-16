@@ -411,6 +411,64 @@ describe("syncGtmSignalToAttio — 404 fallback (deleted record recovery)", () =
   });
 });
 
+describe("syncGtmSignalToAttio — list entry (step 5)", () => {
+  it("calls createAttioListEntry exactly once per sync invocation", async () => {
+    const result = await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: makeGtmSignal(),
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockCreateAttioListEntry).toHaveBeenCalledTimes(1);
+    expect(mockCreateAttioListEntry).toHaveBeenCalledWith(
+      "test-list-id",
+      "people",
+      "person-record-id",
+    );
+  });
+
+  it("returns ok:true when Attio returns 409 (person already in list)", async () => {
+    mockCreateAttioListEntry.mockRejectedValueOnce(
+      new MockAttioApiError("Conflict — duplicate list entry", 409, {}),
+    );
+
+    const result = await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: makeGtmSignal(),
+    });
+
+    // A 409 from the list-entry step means the person is already a member —
+    // the sync goal is satisfied, so the overall result must be ok:true.
+    expect(result.ok).toBe(true);
+    expect(mockCreateAttioListEntry).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns ok:'partial' when Attio returns a non-409 error on the list entry step", async () => {
+    mockCreateAttioListEntry.mockRejectedValueOnce(
+      new MockAttioApiError("Internal Server Error", 500, {}),
+    );
+
+    const result = await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: makeGtmSignal(),
+    });
+
+    // A non-409 error on the list-entry step is a genuine failure, but
+    // records 1–4 have already been written — return partial so callers
+    // can persist those IDs without losing them.
+    expect(result.ok).toBe("partial");
+    if (result.ok === "partial") {
+      expect(result.error).toMatch(/500/);
+      // The IDs from steps 1–4 must be preserved in the partial result
+      expect(result.companyRecordId).toBe("company-record-id");
+      expect(result.personRecordId).toBe("person-record-id");
+    }
+  });
+});
+
 describe("syncGtmSignalToAttio — early exit", () => {
   it("returns ok:false when ATTIO_API_KEY is not set", async () => {
     delete process.env.ATTIO_API_KEY;

@@ -367,11 +367,23 @@ export async function syncGtmSignalToAttio(input: {
   // written records to Attio. A list-entry failure must not orphan those records —
   // we return a partial result so the caller can persist the IDs before recording
   // the error.
+  //
+  // A 409 Conflict from Attio means the person is already a member of the list
+  // (duplicate list entry). This is not an error — the sync goal (person is in
+  // the list) is already satisfied, so we log and continue rather than returning
+  // a partial failure.
   try {
     await createAttioListEntry(GTM_SIGNALS_LIST_ID, "people", personRecordId!);
     logger.info({ personRecordId, listId: GTM_SIGNALS_LIST_ID }, "Attio: Person added to H2 FY26 Growth list");
   } catch (err) {
-    return buildPartialError(err);
+    if (err instanceof AttioApiError && err.status === 409) {
+      logger.info(
+        { personRecordId, listId: GTM_SIGNALS_LIST_ID },
+        "Attio: Person already in H2 FY26 Growth list (409 duplicate) — skipping",
+      );
+    } else {
+      return buildPartialError(err);
+    }
   }
 
   return {
