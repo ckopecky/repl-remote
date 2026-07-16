@@ -287,7 +287,9 @@ export async function syncGtmSignalToAttio(input: {
 
     // 3. Create or update GTM Signal record
     // If a record was already synced (attioGtmSignalRecordId is set), patch it
-    // to avoid creating a duplicate on re-sync.
+    // to avoid creating a duplicate on re-sync. If Attio returns 404 (the record
+    // was manually deleted), fall back to CREATE so the signal can recover
+    // automatically on the next sync.
     const gtmSignalValues = {
       ...buildGtmSignalValues(gtmSignal),
       // Relate back to the Company and Person records we just upserted
@@ -295,14 +297,28 @@ export async function syncGtmSignalToAttio(input: {
       person: personRecordId,
     };
     const existingGtmSignalRecordId = gtmSignal.attioGtmSignalRecordId;
-    const gtmSignalRecord = existingGtmSignalRecordId
-      ? await patchAttioRecord("gtm_signals", existingGtmSignalRecordId, gtmSignalValues)
-      : await createAttioRecord("gtm_signals", gtmSignalValues);
+    let gtmSignalRecord: Awaited<ReturnType<typeof createAttioRecord>>;
+    if (existingGtmSignalRecordId) {
+      try {
+        gtmSignalRecord = await patchAttioRecord("gtm_signals", existingGtmSignalRecordId, gtmSignalValues);
+        logger.info({ gtmSignalRecordId: existingGtmSignalRecordId }, "Attio: GTM Signal record updated");
+      } catch (err) {
+        if (err instanceof AttioApiError && err.status === 404) {
+          logger.warn(
+            { existingGtmSignalRecordId },
+            "Attio: GTM Signal record not found (deleted in Attio) — falling back to CREATE",
+          );
+          gtmSignalRecord = await createAttioRecord("gtm_signals", gtmSignalValues);
+          logger.info({ gtmSignalRecordId: gtmSignalRecord.data.id.record_id }, "Attio: GTM Signal record re-created");
+        } else {
+          throw err;
+        }
+      }
+    } else {
+      gtmSignalRecord = await createAttioRecord("gtm_signals", gtmSignalValues);
+      logger.info({ gtmSignalRecordId: gtmSignalRecord.data.id.record_id }, "Attio: GTM Signal record created");
+    }
     gtmSignalRecordId = gtmSignalRecord.data.id.record_id;
-    logger.info(
-      { gtmSignalRecordId, updated: !!existingGtmSignalRecordId },
-      existingGtmSignalRecordId ? "Attio: GTM Signal record updated" : "Attio: GTM Signal record created",
-    );
 
     // 4. Create or update Generative AI Email record (optional — only if content exists)
     if (generativeAiEmail && generativeAiEmail.subject) {
@@ -314,14 +330,31 @@ export async function syncGtmSignalToAttio(input: {
         current_company_ref: companyRecordId,
       };
       const existingEmailRecordId = generativeAiEmail.attioEmailRecordId;
-      const emailRecord = existingEmailRecordId
-        ? await patchAttioRecord("generative_ai_emails", existingEmailRecordId, emailValues)
-        : await createAttioRecord("generative_ai_emails", emailValues);
+      let emailRecord: Awaited<ReturnType<typeof createAttioRecord>>;
+      if (existingEmailRecordId) {
+        try {
+          emailRecord = await patchAttioRecord("generative_ai_emails", existingEmailRecordId, emailValues);
+          logger.info({ emailRecordId: existingEmailRecordId }, "Attio: Generative AI Email record updated");
+        } catch (err) {
+          if (err instanceof AttioApiError && err.status === 404) {
+            logger.warn(
+              { existingEmailRecordId },
+              "Attio: Generative AI Email record not found (deleted in Attio) — falling back to CREATE",
+            );
+            emailRecord = await createAttioRecord("generative_ai_emails", emailValues);
+            logger.info(
+              { emailRecordId: emailRecord.data.id.record_id },
+              "Attio: Generative AI Email record re-created",
+            );
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        emailRecord = await createAttioRecord("generative_ai_emails", emailValues);
+        logger.info({ emailRecordId: emailRecord.data.id.record_id }, "Attio: Generative AI Email record created");
+      }
       emailRecordId = emailRecord.data.id.record_id;
-      logger.info(
-        { emailRecordId, updated: !!existingEmailRecordId },
-        existingEmailRecordId ? "Attio: Generative AI Email record updated" : "Attio: Generative AI Email record created",
-      );
     }
   } catch (err) {
     // One of steps 1–4 failed. Return whatever IDs were collected so far so
