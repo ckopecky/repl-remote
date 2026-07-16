@@ -258,24 +258,27 @@ function ExportPreviewDialog({ id, open, onOpenChange }: { id: number | null, op
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">Loading payload...</div>
         ) : data ? (
-          <Tabs defaultValue="note" className="flex-1 flex flex-col min-h-0 mt-4">
+          <Tabs defaultValue="gtmSignal" className="flex-1 flex flex-col min-h-0 mt-4">
             <TabsList>
-              <TabsTrigger value="note">Outreach Note</TabsTrigger>
+              <TabsTrigger value="gtmSignal">GTM Signal</TabsTrigger>
+              <TabsTrigger value="generativeEmail">Email Draft</TabsTrigger>
               <TabsTrigger value="person">Person Record</TabsTrigger>
               <TabsTrigger value="company">Company Record</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="note" className="flex-1 min-h-0 m-0 mt-2 border rounded-md overflow-hidden">
-              <pre className="p-4 bg-muted/30 h-full overflow-auto text-sm font-sans whitespace-pre-wrap">
-                {(data as any).note?.content ?? "No content yet -- generate this package first."}
-              </pre>
-            </TabsContent>
-
-            {["person", "company"].map((key) => (
+            {(["gtmSignal", "generativeEmail", "person", "company"] as const).map((key) => (
               <TabsContent key={key} value={key} className="flex-1 min-h-0 m-0 mt-2 border rounded-md overflow-hidden">
-                <pre className="p-4 bg-muted/30 h-full overflow-auto text-xs font-mono">
-                  {JSON.stringify((data as any)[key], null, 2)}
-                </pre>
+                {data[key] ? (
+                  <pre className="p-4 bg-muted/30 h-full overflow-auto text-xs font-mono">
+                    {JSON.stringify(data[key], null, 2)}
+                  </pre>
+                ) : (
+                  <div className="p-4 h-full flex items-center justify-center text-sm text-muted-foreground">
+                    {key === "generativeEmail"
+                      ? "No email draft yet — generate content first."
+                      : "No data available."}
+                  </div>
+                )}
               </TabsContent>
             ))}
           </Tabs>
