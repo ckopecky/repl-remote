@@ -2,6 +2,7 @@ import type { Company, GtmSignal, GenerativeAiEmail, Person } from "@workspace/d
 import {
   AttioApiError,
   createAttioRecord,
+  patchAttioRecord,
   createAttioListEntry,
   upsertAttioRecord,
   GTM_SIGNALS_LIST_ID,
@@ -242,28 +243,44 @@ export async function syncGtmSignalToAttio(input: {
     const personRecordId = personRecord.data.id.record_id;
     logger.info({ personRecordId }, "Attio: person upserted");
 
-    // 3. Create GTM Signal record
-    const gtmSignalRecord = await createAttioRecord("gtm_signals", {
+    // 3. Create or update GTM Signal record
+    // If a record was already synced (attioGtmSignalRecordId is set), patch it
+    // to avoid creating a duplicate on re-sync.
+    const gtmSignalValues = {
       ...buildGtmSignalValues(gtmSignal),
       // Relate back to the Company and Person records we just upserted
       company: companyRecordId,
       person: personRecordId,
-    });
+    };
+    const existingGtmSignalRecordId = gtmSignal.attioGtmSignalRecordId;
+    const gtmSignalRecord = existingGtmSignalRecordId
+      ? await patchAttioRecord("gtm_signals", existingGtmSignalRecordId, gtmSignalValues)
+      : await createAttioRecord("gtm_signals", gtmSignalValues);
     const gtmSignalRecordId = gtmSignalRecord.data.id.record_id;
-    logger.info({ gtmSignalRecordId }, "Attio: GTM Signal record created");
+    logger.info(
+      { gtmSignalRecordId, updated: !!existingGtmSignalRecordId },
+      existingGtmSignalRecordId ? "Attio: GTM Signal record updated" : "Attio: GTM Signal record created",
+    );
 
-    // 4. Create Generative AI Email record (optional — only if content exists)
+    // 4. Create or update Generative AI Email record (optional — only if content exists)
     let emailRecordId: string | null = null;
     if (generativeAiEmail && generativeAiEmail.subject) {
-      const emailRecord = await createAttioRecord("generative_ai_emails", {
+      const emailValues = {
         ...buildGenerativeEmailValues(generativeAiEmail),
         // Attio attribute slug is `gtm_signal` (singular, not multiselect)
         gtm_signal: gtmSignalRecordId,
         current_person_ref: personRecordId,
         current_company_ref: companyRecordId,
-      });
+      };
+      const existingEmailRecordId = generativeAiEmail.attioEmailRecordId;
+      const emailRecord = existingEmailRecordId
+        ? await patchAttioRecord("generative_ai_emails", existingEmailRecordId, emailValues)
+        : await createAttioRecord("generative_ai_emails", emailValues);
       emailRecordId = emailRecord.data.id.record_id;
-      logger.info({ emailRecordId }, "Attio: Generative AI Email record created");
+      logger.info(
+        { emailRecordId, updated: !!existingEmailRecordId },
+        existingEmailRecordId ? "Attio: Generative AI Email record updated" : "Attio: Generative AI Email record created",
+      );
     }
 
     // 5. Add the Person to the H2 FY26 Growth list.

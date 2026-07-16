@@ -326,6 +326,24 @@ export async function createAttioListEntry(
 }
 
 /**
+ * Updates an existing record on a custom Attio object via PATCH. Only the
+ * supplied attributes are changed; omitted attributes are left untouched.
+ * Use this instead of `createAttioRecord` when the record already exists
+ * (i.e. the Attio record ID is stored locally) to prevent duplicates on
+ * re-sync.
+ */
+export async function patchAttioRecord(
+  objectSlug: string,
+  recordId: string,
+  values: Record<string, unknown>,
+): Promise<AttioRecordResponse> {
+  return attioRequest<AttioRecordResponse>(
+    `/objects/${objectSlug}/records/${recordId}`,
+    { method: "PATCH", body: { data: { values } } },
+  );
+}
+
+/**
  * Creates a note on an existing Attio record.
  */
 export async function createAttioNote(input: {
