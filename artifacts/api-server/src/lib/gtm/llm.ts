@@ -2,6 +2,7 @@ import { anthropic } from "@workspace/integrations-anthropic-ai";
 import type { Company, Person } from "@workspace/db";
 import type { Archetype } from "./constants";
 import { ARCHETYPE_INFO } from "./constants";
+import { logger } from "../logger";
 
 const MODEL = "claude-sonnet-4-6";
 
@@ -97,6 +98,19 @@ function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
+/**
+ * The four exact values the LLM is instructed to return for authProblemAngle.
+ * Validation warns (rather than rejects) on mismatch so the raw value is
+ * preserved in the DB for inspection; mapping to valid Attio options happens
+ * later, at sync time, in mapAuthProblemAngle (attio.ts).
+ */
+const VALID_AUTH_PROBLEM_ANGLES = [
+  "multi-tenancy & orgs",
+  "billing structure",
+  "authentication",
+  "enterprise SSO/SAML",
+] as const;
+
 function validateContent(raw: unknown): GeneratedOutreachContent {
   if (typeof raw !== "object" || raw === null) {
     throw new Error("Model response was not a JSON object");
@@ -120,11 +134,18 @@ function validateContent(raw: unknown): GeneratedOutreachContent {
   if (confidence !== "low" && confidence !== "medium" && confidence !== "high") {
     throw new Error(`Model response had invalid confidence: ${confidence}`);
   }
+  const authProblemAngle = (r.authProblemAngle as string).trim();
+  if (!(VALID_AUTH_PROBLEM_ANGLES as readonly string[]).includes(authProblemAngle)) {
+    logger.warn(
+      { rawAuthProblemAngle: authProblemAngle, validValues: VALID_AUTH_PROBLEM_ANGLES },
+      "LLM returned unexpected authProblemAngle value — storing raw value; fuzzy mapping will apply at sync time",
+    );
+  }
   return {
     verdictReason: (r.verdictReason as string).trim(),
     confidence,
     outreachAngle: (r.outreachAngle as string).trim(),
-    authProblemAngle: (r.authProblemAngle as string).trim(),
+    authProblemAngle,
     researchSummary: (r.researchSummary as string).trim(),
     emailSubject: (r.emailSubject as string).trim(),
     emailBody: (r.emailBody as string).trim(),
