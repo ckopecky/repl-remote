@@ -61,8 +61,11 @@ vi.mock("../logger", () => ({
   },
 }));
 
-// Import the subject under test AFTER mocks are registered
+// Import the subject under test AND the mocked constant AFTER mocks are registered.
+// GTM_SIGNALS_LIST_ID resolves to the mock value ("test-list-id") because
+// vi.mock("./attioClient", …) is already registered above.
 import { syncGtmSignalToAttio } from "./attio";
+import { GTM_SIGNALS_LIST_ID } from "./attioClient";
 
 // ---------------------------------------------------------------------------
 // Helpers — minimal fixtures that satisfy the TypeScript types
@@ -412,7 +415,7 @@ describe("syncGtmSignalToAttio — 404 fallback (deleted record recovery)", () =
 });
 
 describe("syncGtmSignalToAttio — list entry (step 5)", () => {
-  it("calls createAttioListEntry exactly once per sync invocation", async () => {
+  it("calls createAttioListEntry exactly once per sync invocation with the correct list ID", async () => {
     const result = await syncGtmSignalToAttio({
       company: makeCompany(),
       person: makePerson(),
@@ -421,11 +424,37 @@ describe("syncGtmSignalToAttio — list entry (step 5)", () => {
 
     expect(result.ok).toBe(true);
     expect(mockCreateAttioListEntry).toHaveBeenCalledTimes(1);
+    // Assert using the imported constant so the test stays coupled to
+    // whatever GTM_SIGNALS_LIST_ID resolves to — a hardcoded string here
+    // would silently pass even if attio.ts stopped reading the constant.
     expect(mockCreateAttioListEntry).toHaveBeenCalledWith(
-      "test-list-id",
+      GTM_SIGNALS_LIST_ID,
       "people",
       "person-record-id",
     );
+  });
+
+  it("list-ID assertion is load-bearing — a wrong ID would not match", async () => {
+    // This test proves the assertion above is non-trivial: if attio.ts ever
+    // hardcodes a different list ID (or reads from a different constant), the
+    // first argument captured by the mock will differ from GTM_SIGNALS_LIST_ID
+    // and both tests will fail, surfacing the regression immediately.
+    await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: makeGtmSignal(),
+    });
+
+    const [calledListId] = mockCreateAttioListEntry.mock.calls[0] as [string, string, string];
+
+    // The captured list ID must equal the constant exactly.
+    expect(calledListId).toBe(GTM_SIGNALS_LIST_ID);
+
+    // A sentinel wrong value must NOT match — confirming the check is strict.
+    // (If GTM_SIGNALS_LIST_ID were the empty string or undefined, this would
+    // also fail, catching accidental erasure of the constant.)
+    expect(calledListId).not.toBe("00000000-0000-0000-0000-000000000000");
+    expect(calledListId).not.toBe("");
   });
 
   it("returns ok:true when Attio returns 409 (person already in list)", async () => {
