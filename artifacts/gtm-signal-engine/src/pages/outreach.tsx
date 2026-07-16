@@ -191,6 +191,17 @@ export default function OutreachQueue() {
                           </Button>
                         )}
 
+                        {pkg.status === GtmSignalStatus.Rejected && (
+                          <Button
+                            variant="outline" size="sm" className="h-8"
+                            disabled={generateMut.isPending}
+                            onClick={() => generateMut.mutate({ id: pkg.id })}
+                          >
+                            <RefreshCw className="w-4 h-4 mr-1.5" />
+                            Regenerate Email
+                          </Button>
+                        )}
+
                         {pkg.status === GtmSignalStatus.Needs_Review && (
                           <>
                             <Button 
