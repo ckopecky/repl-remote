@@ -32,7 +32,7 @@ export const gtmSignalsTable = pgTable("gtm_signals", {
   sourceSignal: text("source_signal").notNull(),
 behavioralTrail: jsonb("behavioral_trail").notNull().$type<string[]>(),
 behaviorSummary: text("behavior_summary").notNull(),
-researchSummary: text("research_summary").notNull(),
+researchNotes: text("research_notes").notNull(),
 //export const user = pgTable("user", {
   //   id: serial("id"),
   //   name: text("name"),
@@ -40,10 +40,10 @@ researchSummary: text("research_summary").notNull(),
   // });
 hypothesisVersion: text("hypothesis_version").notNull(),
 promptVersion: text("prompt_version").notNull(),
-emailVersion: text("email_version").$onUpdateFn((val:string) => {
-  val = (Number(val) + 1).toString();
-  return val;
-}),
+//emailVersion: //TODO: move to its own Generative AI Table text("email_version").$onUpdateFn((val:string) => {
+//   val = (Number(val) + 1).toString();
+//   return val;
+// }),
 status: text("status").notNull().default("Thinking"),
   exportedToAttio: boolean("exported_to_attio").notNull().default(false),
   attioSyncStatus: text("attio_sync_status").notNull().default("not_synced"),
@@ -55,15 +55,15 @@ status: text("status").notNull().default("Thinking"),
   attioSyncedAt: timestamp("attio_synced_at", { withTimezone: true }),
   generationStatus: text("generation_status").notNull().default("pending"),
   generationError: text("generation_error"),
-  agentConfidence: text("agent_confidence"),
-  outreachEmailSubject: text("outreach_email_subject").notNull().default(""),
-  outreachEmailBody: text("outreach_email_body").notNull().default(""),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+//   agentConfidence: text("agent_confidence"),
+//   outreachEmailSubject: text("outreach_email_subject").notNull().default(""),
+//   outreachEmailBody: text("outreach_email_body").notNull().default(""),
+//   createdAt: timestamp("created_at", { withTimezone: true })
+//     .notNull()
+//     .defaultNow(),
+// });
 
-export const authProblemAngle = pgTable("auth_problem_angle", {
+// export const authProblemAngle = pgTable("auth_problem_angle", {
   id: serial("id"),
   angle: text("angle"),
   parentId: integer("parent_id").references((): AnyPgColumn => authProblemAngle.id)
