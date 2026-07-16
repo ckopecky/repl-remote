@@ -166,8 +166,12 @@ export async function generateOutreachContent(input: {
   behaviorSummary: string;
   outreachPriority: string;
   sourceSignal: string;
+  /** Present when regenerating after a reviewer rejection. */
+  previousEmailSubject?: string;
+  previousEmailBody?: string;
+  rejectionFeedback?: string;
 }): Promise<GenerationResult> {
-  const { company, person, archetype, behavioralTrail, behaviorSummary, outreachPriority, sourceSignal } = input;
+  const { company, person, archetype, behavioralTrail, behaviorSummary, outreachPriority, sourceSignal, previousEmailSubject, previousEmailBody, rejectionFeedback } = input;
 
   const archetypeInfo = ARCHETYPE_INFO[archetype];
 
@@ -219,7 +223,24 @@ Task: write a JSON object (and ONLY a JSON object, no other text) with exactly t
 - "emailSubject": per the voice rules.
 - "emailBody": per the voice rules, ending with a one-line sign-off using just the first
   name "Alex" (this is a demo -- always sign as Alex, no title or company).
-`.trim();
+${
+  rejectionFeedback && previousEmailSubject && previousEmailBody
+    ? `
+IMPORTANT — this is a regeneration request. A reviewer already rejected the previous draft.
+You must meaningfully address the feedback below; do not produce a trivially similar email.
+
+Previous email subject: ${previousEmailSubject}
+Previous email body:
+${previousEmailBody}
+
+Reviewer feedback / improvement notes:
+${rejectionFeedback}
+
+Address the feedback directly. If the feedback asks for a tighter angle, different hook, or
+different tone — honour it. The output must be a noticeably improved second draft.
+`.trim()
+    : ""
+}`.trim();
 
   try {
     const message = await anthropic.messages.create({

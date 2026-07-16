@@ -336,6 +336,21 @@ async function runGeneration(gtmSignalId: number) {
     throw new Error(`Person or company not found for GTM signal ${gtmSignalId}`);
   }
 
+  // If there is stored rejection feedback, fetch the most recent email draft so
+  // the LLM can see what it previously wrote and address the reviewer's notes.
+  let previousEmailSubject: string | undefined;
+  let previousEmailBody: string | undefined;
+  if (gtmSignal.rejectionFeedback) {
+    const [latestEmail] = await db
+      .select()
+      .from(generativeAiEmailsTable)
+      .where(eq(generativeAiEmailsTable.gtmSignalId, gtmSignalId))
+      .orderBy(desc(generativeAiEmailsTable.emailVersion))
+      .limit(1);
+    previousEmailSubject = latestEmail?.subject ?? undefined;
+    previousEmailBody = latestEmail?.body ?? undefined;
+  }
+
   const result = await generateOutreachContent({
     company,
     person,
@@ -344,6 +359,9 @@ async function runGeneration(gtmSignalId: number) {
     behaviorSummary: gtmSignal.behaviorSummary,
     outreachPriority: gtmSignal.sourceSignal,
     sourceSignal: gtmSignal.sourceSignal,
+    previousEmailSubject,
+    previousEmailBody,
+    rejectionFeedback: gtmSignal.rejectionFeedback ?? undefined,
   });
 
   // Count existing email versions for this signal so we increment correctly
@@ -379,6 +397,8 @@ async function runGeneration(gtmSignalId: number) {
             outreachEmailSubject: result.content.emailSubject,
             outreachEmailBody: result.content.emailBody,
             status: "Needs Review",
+            // Clear feedback so the next review cycle starts fresh
+            rejectionFeedback: null,
           }
         : {
             generationStatus: "failed",
