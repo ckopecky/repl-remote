@@ -427,3 +427,140 @@ describe("syncGtmSignalToAttio — early exit", () => {
     expect(mockUpsertAttioRecord).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// mapAuthProblemAngle — tested indirectly via auth_problem_angle in the GTM
+// Signal payload sent to createAttioRecord / patchAttioRecord.
+// ---------------------------------------------------------------------------
+
+describe("mapAuthProblemAngle — exact matches pass through unchanged", () => {
+  it.each([
+    "multi-tenancy & orgs",
+    "billing structure",
+    "authentication",
+    "enterprise SSO/SAML",
+  ] as const)(
+    "maps '%s' to itself",
+    async (angle) => {
+      const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: angle });
+
+      await syncGtmSignalToAttio({
+        company: makeCompany(),
+        person: makePerson(),
+        gtmSignal: signal,
+      });
+
+      expect(mockCreateAttioRecord).toHaveBeenCalledWith(
+        "gtm_signals",
+        expect.objectContaining({ auth_problem_angle: [angle] }),
+      );
+    },
+  );
+});
+
+describe("mapAuthProblemAngle — fuzzy near-miss mapping", () => {
+  it("maps 'SSO/SAML enterprise' (reordered) to 'enterprise SSO/SAML'", async () => {
+    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "SSO/SAML enterprise" });
+
+    await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: signal,
+    });
+
+    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
+      "gtm_signals",
+      expect.objectContaining({ auth_problem_angle: ["enterprise SSO/SAML"] }),
+    );
+  });
+
+  it("maps 'SAML provisioning' to 'enterprise SSO/SAML'", async () => {
+    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "SAML provisioning" });
+
+    await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: signal,
+    });
+
+    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
+      "gtm_signals",
+      expect.objectContaining({ auth_problem_angle: ["enterprise SSO/SAML"] }),
+    );
+  });
+
+  it("maps 'multi-tenant architecture' to 'multi-tenancy & orgs'", async () => {
+    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "multi-tenant architecture" });
+
+    await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: signal,
+    });
+
+    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
+      "gtm_signals",
+      expect.objectContaining({ auth_problem_angle: ["multi-tenancy & orgs"] }),
+    );
+  });
+
+  it("maps 'org management' to 'multi-tenancy & orgs'", async () => {
+    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "org management" });
+
+    await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: signal,
+    });
+
+    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
+      "gtm_signals",
+      expect.objectContaining({ auth_problem_angle: ["multi-tenancy & orgs"] }),
+    );
+  });
+
+  it("maps 'subscription entitlement' to 'billing structure'", async () => {
+    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "subscription entitlement" });
+
+    await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: signal,
+    });
+
+    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
+      "gtm_signals",
+      expect.objectContaining({ auth_problem_angle: ["billing structure"] }),
+    );
+  });
+
+  it("maps 'identity management' (no keyword match) to the default 'authentication'", async () => {
+    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: "identity management" });
+
+    await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: signal,
+    });
+
+    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
+      "gtm_signals",
+      expect.objectContaining({ auth_problem_angle: ["authentication"] }),
+    );
+  });
+
+  it("maps null authProblemAngle to the default 'authentication'", async () => {
+    const signal = makeGtmSignal({ attioGtmSignalRecordId: null, authProblemAngle: null });
+
+    await syncGtmSignalToAttio({
+      company: makeCompany(),
+      person: makePerson(),
+      gtmSignal: signal,
+    });
+
+    expect(mockCreateAttioRecord).toHaveBeenCalledWith(
+      "gtm_signals",
+      expect.objectContaining({ auth_problem_angle: ["authentication"] }),
+    );
+  });
+});
