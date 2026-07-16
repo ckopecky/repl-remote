@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Building2, Calendar, FileText, Send, User, Target, Activity, CheckCircle2, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Building2, Calendar, FileText, Send, User, Target, Activity, CheckCircle2, ShieldAlert, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -41,6 +41,13 @@ export default function ProspectDetail() {
   }
 
   const { person, company, events, behavioralTrail, researchAssessment, gtmSignal } = detail;
+
+  const AUTH_ANGLE_COLORS: Record<string, string> = {
+    "multi-tenancy & orgs": "bg-teal-500/10 text-teal-700 border-teal-500/20",
+    "billing structure": "bg-amber-500/10 text-amber-700 border-amber-500/20",
+    "authentication": "bg-blue-500/10 text-blue-700 border-blue-500/20",
+    "enterprise SSO/SAML": "bg-violet-500/10 text-violet-700 border-violet-500/20",
+  };
 
   const getPriorityColor = (p: string) => {
     switch (p) {
@@ -123,6 +130,26 @@ export default function ProspectDetail() {
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Recommended Angle</h4>
                 <p className="text-sm font-medium leading-relaxed">{researchAssessment.recommendedAngle}</p>
               </div>
+              {gtmSignal?.authProblemAngle && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5" />
+                      Auth Problem Angle
+                    </h4>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-medium ${AUTH_ANGLE_COLORS[gtmSignal.authProblemAngle] ?? "bg-muted text-muted-foreground border-border"}`}
+                    >
+                      {gtmSignal.authProblemAngle}
+                    </Badge>
+                    {gtmSignal.outreachAngle && (
+                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{gtmSignal.outreachAngle}</p>
+                    )}
+                  </div>
+                </>
+              )}
               <Separator />
               <div>
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Analyst Rationale</h4>

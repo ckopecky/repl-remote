@@ -950,6 +950,7 @@ components:
         - sourceSignal
         - outreachPriority
         - outreachAngle
+        - authProblemAngle
         - status
         - attioSyncStatus
         - attioPersonWebUrl
@@ -967,6 +968,10 @@ components:
         outreachPriority:
           $ref: "#/components/schemas/OutreachPriority"
         outreachAngle: { type: string }
+        authProblemAngle:
+          oneOf:
+            - type: string
+            - type: "null"
         status:
           $ref: "#/components/schemas/GtmSignalStatus"
         attioSyncStatus:

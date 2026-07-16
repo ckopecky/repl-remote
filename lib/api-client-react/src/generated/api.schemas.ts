@@ -307,6 +307,8 @@ export interface GtmSignalListItem {
   sourceSignal: string;
   outreachPriority: OutreachPriority;
   outreachAngle: string;
+  /** @nullable */
+  authProblemAngle: string | null;
   status: GtmSignalStatus;
   attioSyncStatus: AttioSyncStatus;
   generationStatus: GenerationStatus;

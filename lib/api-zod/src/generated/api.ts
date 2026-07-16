@@ -307,6 +307,7 @@ export const ListGtmSignalsResponseItem = zod.object({
   "sourceSignal": zod.string(),
   "outreachPriority": zod.enum(['High', 'Medium', 'Low', 'Suppress']),
   "outreachAngle": zod.string(),
+  "authProblemAngle": zod.union([zod.string(),zod.null()]),
   "status": zod.enum(['Researching', 'Ready for Generation', 'Generated', 'Needs Review', 'Regeneration Requested', 'Regenerated', 'Approved', 'Rejected', 'Paused', 'Sent', 'Replied']),
   "attioSyncStatus": zod.enum(['not_synced', 'synced', 'partial', 'error']),
   "generationStatus": zod.enum(['pending', 'generated', 'failed']),

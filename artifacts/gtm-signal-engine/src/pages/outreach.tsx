@@ -99,15 +99,16 @@ export default function OutreachQueue() {
                 <TableHead>Company</TableHead>
                 <TableHead>Priority</TableHead>
                 <TableHead>Source Signal</TableHead>
+                <TableHead>Angles</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="h-32 text-center">Loading queue...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="h-32 text-center">Loading queue...</TableCell></TableRow>
               ) : packages?.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="h-32 text-center text-muted-foreground">Queue is empty.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="h-32 text-center text-muted-foreground">Queue is empty.</TableCell></TableRow>
               ) : (
                 packages?.map(pkg => (
                   <TableRow key={pkg.id}>
@@ -120,6 +121,16 @@ export default function OutreachQueue() {
                     </TableCell>
                     <TableCell className="text-sm max-w-[200px] truncate" title={pkg.sourceSignal}>
                       {pkg.sourceSignal}
+                    </TableCell>
+                    <TableCell className="max-w-[220px]">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs text-muted-foreground leading-snug line-clamp-2" title={pkg.outreachAngle}>
+                          {pkg.outreachAngle}
+                        </span>
+                        {pkg.authProblemAngle && (
+                          <AuthAngleBadge angle={pkg.authProblemAngle} />
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
@@ -245,6 +256,22 @@ export default function OutreachQueue() {
         onOpenChange={(v) => !v && setPreviewId(null)} 
       />
     </div>
+  );
+}
+
+const AUTH_ANGLE_COLORS: Record<string, string> = {
+  "multi-tenancy & orgs": "bg-teal-500/10 text-teal-700 border-teal-500/20",
+  "billing structure": "bg-amber-500/10 text-amber-700 border-amber-500/20",
+  "authentication": "bg-blue-500/10 text-blue-700 border-blue-500/20",
+  "enterprise SSO/SAML": "bg-violet-500/10 text-violet-700 border-violet-500/20",
+};
+
+function AuthAngleBadge({ angle }: { angle: string }) {
+  const colorClass = AUTH_ANGLE_COLORS[angle] ?? "bg-muted text-muted-foreground border-border";
+  return (
+    <Badge variant="outline" className={`text-[10px] font-medium whitespace-nowrap ${colorClass}`}>
+      {angle}
+    </Badge>
   );
 }
 
