@@ -258,7 +258,9 @@ router.post("/gtm-signals/:id/attio-sync", async (req, res): Promise<void> => {
   }
 
   const gtmSignal = await runAttioSync(params.data.id);
-  res.status(gtmSignal.attioSyncStatus === "error" ? 502 : 200).json(
+  const syncFailed =
+    gtmSignal.attioSyncStatus === "error" || gtmSignal.attioSyncStatus === "partial";
+  res.status(syncFailed ? 502 : 200).json(
     GetGtmSignalResponse.parse(gtmSignal),
   );
 });
@@ -408,37 +410,57 @@ async function runAttioSync(gtmSignalId: number) {
 
   const result = await syncGtmSignalToAttio({ company, person, gtmSignal, generativeAiEmail });
 
-  // Persist the Attio record IDs on the email row if we got one back
-  if (result.ok && generativeAiEmail && result.emailRecordId) {
+  // Persist the Attio record IDs on the email row if we got one back.
+  // This applies for both full success and partial success (steps 1–4 done,
+  // list-entry step failed) so the email record is never orphaned.
+  const emailIdToSave =
+    result.ok === true || result.ok === "partial" ? result.emailRecordId : null;
+  if (generativeAiEmail && emailIdToSave) {
     await db
       .update(generativeAiEmailsTable)
       .set({
-        attioEmailRecordId: result.emailRecordId,
-        attioSyncStatus: "synced",
-        attioSyncError: null,
+        attioEmailRecordId: emailIdToSave,
+        attioSyncStatus: result.ok === true ? "synced" : "partial",
+        attioSyncError: result.ok === "partial" ? result.error : null,
       })
       .where(eq(generativeAiEmailsTable.id, generativeAiEmail.id));
   }
 
-  const [saved] = await db
-    .update(gtmSignalsTable)
-    .set(
-      result.ok
+  // Build the DB update payload based on the result variant.
+  // - ok: true  → full success, mark as synced
+  // - ok: partial → steps 1–4 wrote records to Attio but step 5 (list entry) failed;
+  //                 persist the IDs we have so a retry won't create duplicates
+  // - ok: false → nothing was created in Attio
+  const gtmSignalUpdate =
+    result.ok === true
+      ? {
+          attioSyncStatus: "synced" as const,
+          exportedToAttio: true,
+          attioCompanyRecordId: result.companyRecordId,
+          attioPersonRecordId: result.personRecordId,
+          attioGtmSignalRecordId: result.gtmSignalRecordId,
+          attioPersonWebUrl: result.personWebUrl,
+          attioSyncedAt: result.syncedAt,
+          attioSyncError: null,
+        }
+      : result.ok === "partial"
         ? {
-            attioSyncStatus: "synced",
-            exportedToAttio: true,
-            attioCompanyRecordId: result.companyRecordId,
-            attioPersonRecordId: result.personRecordId,
-            attioGtmSignalRecordId: result.gtmSignalRecordId,
-            attioPersonWebUrl: result.personWebUrl,
-            attioSyncedAt: result.syncedAt,
-            attioSyncError: null,
+            attioSyncStatus: "partial" as const,
+            // Persist whatever IDs were created so a retry only handles what's missing
+            ...(result.companyRecordId ? { attioCompanyRecordId: result.companyRecordId } : {}),
+            ...(result.personRecordId ? { attioPersonRecordId: result.personRecordId } : {}),
+            ...(result.personWebUrl ? { attioPersonWebUrl: result.personWebUrl } : {}),
+            ...(result.gtmSignalRecordId ? { attioGtmSignalRecordId: result.gtmSignalRecordId } : {}),
+            attioSyncError: `Partial sync — records created in Attio but list-entry step failed: ${result.error}`,
           }
         : {
-            attioSyncStatus: "error",
+            attioSyncStatus: "error" as const,
             attioSyncError: result.error,
-          },
-    )
+          };
+
+  const [saved] = await db
+    .update(gtmSignalsTable)
+    .set(gtmSignalUpdate)
     .where(eq(gtmSignalsTable.id, gtmSignalId))
     .returning();
 

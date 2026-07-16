@@ -1002,7 +1002,7 @@ components:
 
     AttioSyncStatus:
       type: string
-      enum: [not_synced, synced, error]
+      enum: [not_synced, synced, partial, error]
 
     GenerationStatus:
       type: string

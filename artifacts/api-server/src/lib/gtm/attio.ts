@@ -97,12 +97,26 @@ export interface AttioGtmSyncSuccess {
   syncedAt: Date;
 }
 
+export interface AttioGtmSyncPartial {
+  ok: "partial";
+  error: string;
+  // IDs for records that were successfully created/updated before the failure
+  companyRecordId?: string;
+  personRecordId?: string;
+  personWebUrl?: string;
+  gtmSignalRecordId?: string;
+  emailRecordId?: string | null;
+}
+
 export interface AttioGtmSyncFailure {
   ok: false;
   error: string;
 }
 
-export type AttioGtmSyncResult = AttioGtmSyncSuccess | AttioGtmSyncFailure;
+export type AttioGtmSyncResult =
+  | AttioGtmSyncSuccess
+  | AttioGtmSyncPartial
+  | AttioGtmSyncFailure;
 
 // ---------------------------------------------------------------------------
 // Payload builders
@@ -219,6 +233,33 @@ export async function syncGtmSignalToAttio(input: {
     return { ok: false, error: "ATTIO_API_KEY is not configured" };
   }
 
+  // Track IDs as they are created so a partial failure can persist whatever
+  // was written to Attio and avoid orphaning those records on a retry.
+  let companyRecordId: string | undefined;
+  let personRecordId: string | undefined;
+  let personWebUrl: string | undefined;
+  let gtmSignalRecordId: string | undefined;
+  let emailRecordId: string | null = null;
+
+  function buildPartialError(err: unknown): AttioGtmSyncPartial {
+    const message =
+      err instanceof AttioApiError
+        ? `Attio API error (${err.status}): ${err.message}`
+        : err instanceof Error
+          ? err.message
+          : "Unknown error syncing to Attio";
+    logger.error({ err }, "Attio sync failed (partial)");
+    return {
+      ok: "partial",
+      error: message,
+      companyRecordId,
+      personRecordId,
+      personWebUrl,
+      gtmSignalRecordId,
+      emailRecordId,
+    };
+  }
+
   try {
     // 1. Upsert Company
     const companyRecord = await upsertAttioRecord("companies", "domains", {
@@ -226,7 +267,7 @@ export async function syncGtmSignalToAttio(input: {
       name: company.name,
       description: buildCompanyDescription(company),
     });
-    const companyRecordId = companyRecord.data.id.record_id;
+    companyRecordId = companyRecord.data.id.record_id;
     logger.info({ companyRecordId }, "Attio: company upserted");
 
     // 2. Upsert Person
@@ -240,7 +281,8 @@ export async function syncGtmSignalToAttio(input: {
       job_title: person.title,
       company: company.domain,
     });
-    const personRecordId = personRecord.data.id.record_id;
+    personRecordId = personRecord.data.id.record_id;
+    personWebUrl = personRecord.data.web_url;
     logger.info({ personRecordId }, "Attio: person upserted");
 
     // 3. Create or update GTM Signal record
@@ -256,14 +298,13 @@ export async function syncGtmSignalToAttio(input: {
     const gtmSignalRecord = existingGtmSignalRecordId
       ? await patchAttioRecord("gtm_signals", existingGtmSignalRecordId, gtmSignalValues)
       : await createAttioRecord("gtm_signals", gtmSignalValues);
-    const gtmSignalRecordId = gtmSignalRecord.data.id.record_id;
+    gtmSignalRecordId = gtmSignalRecord.data.id.record_id;
     logger.info(
       { gtmSignalRecordId, updated: !!existingGtmSignalRecordId },
       existingGtmSignalRecordId ? "Attio: GTM Signal record updated" : "Attio: GTM Signal record created",
     );
 
     // 4. Create or update Generative AI Email record (optional — only if content exists)
-    let emailRecordId: string | null = null;
     if (generativeAiEmail && generativeAiEmail.subject) {
       const emailValues = {
         ...buildGenerativeEmailValues(generativeAiEmail),
@@ -282,29 +323,31 @@ export async function syncGtmSignalToAttio(input: {
         existingEmailRecordId ? "Attio: Generative AI Email record updated" : "Attio: Generative AI Email record created",
       );
     }
-
-    // 5. Add the Person to the H2 FY26 Growth list.
-    // The list is configured with parent_object "people", so we add the person record.
-    await createAttioListEntry(GTM_SIGNALS_LIST_ID, "people", personRecordId);
-    logger.info({ personRecordId, listId: GTM_SIGNALS_LIST_ID }, "Attio: Person added to H2 FY26 Growth list");
-
-    return {
-      ok: true,
-      companyRecordId,
-      personRecordId,
-      personWebUrl: personRecord.data.web_url,
-      gtmSignalRecordId,
-      emailRecordId,
-      syncedAt: new Date(),
-    };
   } catch (err) {
-    const message =
-      err instanceof AttioApiError
-        ? `Attio API error (${err.status}): ${err.message}`
-        : err instanceof Error
-          ? err.message
-          : "Unknown error syncing to Attio";
-    logger.error({ err }, "Attio sync failed");
-    return { ok: false, error: message };
+    // One of steps 1–4 failed. Return whatever IDs were collected so far so
+    // the caller can persist them and avoid orphaning already-created records.
+    return buildPartialError(err);
   }
+
+  // 5. Add the Person to the H2 FY26 Growth list.
+  // This step is wrapped in its own try-catch because steps 1–4 have already
+  // written records to Attio. A list-entry failure must not orphan those records —
+  // we return a partial result so the caller can persist the IDs before recording
+  // the error.
+  try {
+    await createAttioListEntry(GTM_SIGNALS_LIST_ID, "people", personRecordId!);
+    logger.info({ personRecordId, listId: GTM_SIGNALS_LIST_ID }, "Attio: Person added to H2 FY26 Growth list");
+  } catch (err) {
+    return buildPartialError(err);
+  }
+
+  return {
+    ok: true,
+    companyRecordId: companyRecordId!,
+    personRecordId: personRecordId!,
+    personWebUrl: personWebUrl!,
+    gtmSignalRecordId: gtmSignalRecordId!,
+    emailRecordId,
+    syncedAt: new Date(),
+  };
 }

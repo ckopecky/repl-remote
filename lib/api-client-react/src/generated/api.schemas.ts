@@ -230,6 +230,7 @@ export type AttioSyncStatus = typeof AttioSyncStatus[keyof typeof AttioSyncStatu
 export const AttioSyncStatus = {
   not_synced: 'not_synced',
   synced: 'synced',
+  partial: 'partial',
   error: 'error',
 } as const;
 
